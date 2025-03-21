@@ -18,7 +18,7 @@ discoveryService.registerService({
     serviceAddress: addr()
 }, (error, response) => {
     console.log("discoveryService");
-    
+
     if (error) {
         console.log("An error occurred trying to register with discovery service: ");
         console.log(error);
@@ -26,16 +26,17 @@ discoveryService.registerService({
     } else {
         console.log("Response from discovery service: ");
         console.log(response);
+        
+        // Create service after registering with discovery service
+        const server = new grpc.Server();
+
+        // server.addService(discoveryProto.DiscoveryService.service, {
+
+        // });
+
+        server.bindAsync(addr(), grpc.ServerCredentials.createInsecure(), () => {
+            console.log("Robot Service running on " + addr());
+            //server.start(); // No longer necessary to call this function, according to node
+        })
     }
 });
-
-const server = new grpc.Server();
-
-// server.addService(discoveryProto.DiscoveryService.service, {
-
-// });
-
-server.bindAsync(addr(), grpc.ServerCredentials.createInsecure(), () => {
-    console.log("Robot Service running on " + addr());
-    //server.start(); // No longer necessary to call this function, according to node
-})

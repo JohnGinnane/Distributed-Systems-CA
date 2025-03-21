@@ -22,10 +22,45 @@ const registerService = (call, callback) => {
     console.log(`Creating service '${serviceName}' at ${serviceAddress}`);
 
     // Make sure service name is valid
+    if (!serviceName) {
+        var errMsg = `Service name '${serviceName}' is not valid!`;
+        console.error(errMsg);
+        callback({
+            code: grpc.status.INVALID_ARGUMENT,
+            details: errMsg
+        });
+
+        return;
+    }
 
     // Make sure service address is valid and not in use
+    if (!serviceAddress) {
+        var errMsg = `Service address '${serviceName}' is not valid!`;
+        console.error(errMsg);
+        callback({
+            code: grpc.status.INVALID_ARGUMENT,
+            details: errMsg
+        });
+
+        return;
+    }
+
+    if (services.find((x) => x.serviceAddress == serviceAddress)) {
+        var errMsg = `Service address ${serviceAddress} is already registered!`;
+        console.error(errMsg);
+        callback({
+            code: grpc.status.ALREADY_EXISTS,
+            details: errMsg
+        });
+
+        return;
+    }
 
     // Store in services array
+    services.push({
+        serviceName: serviceName,
+        serviceAddress: serviceAddress
+    });
     
     // All good on discovery, respond to service
     callback(null, {status: 1});
