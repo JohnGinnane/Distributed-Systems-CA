@@ -15,12 +15,25 @@ const services = [];
 
 const server = new grpc.Server();
 
-function registerService() {
+const registerService = (call, callback) => {
+    const serviceName = call.request.serviceName;
+    const serviceAddress = call.request.serviceAddress;
 
+    console.log(`Creating service ${serviceName} at ${serviceAddress}`);
+
+    // Make sure service name is valid
+
+    // Make sure service address is valid and not in use
+
+    // Store in services array
 }
 
-function unregisterService() {
-    
+const unregisterService = (call, callback) => {
+    const serviceName = call.request.serviceName;
+
+    // Make sure service exists
+
+    // Remove from services array
 }
 
 server.addService(discoveryProto.DiscoveryService.service, {
