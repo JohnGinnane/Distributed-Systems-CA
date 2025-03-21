@@ -10,7 +10,7 @@ const discoveryProto = grpc.loadPackageDefinition(packageDefinition).discovery;
 let ADDRESS = "127.0.0.1";
 let PORT    = "50000";
 
-function addr() { return `${ADDRESS}:${PORT}`; }
+function address() { return `${ADDRESS}:${PORT}`; }
 
 const services = [];
 
@@ -76,11 +76,15 @@ const registerService = (call, callback) => {
 }
 
 const unregisterService = (call, callback) => {
-    const serviceName = call.request.serviceName;
+    const serviceID = call.request.serviceID;
 
     // Make sure service exists
+    serviceIndex = services.findIndex((x) => x.serviceID == serviceID);
 
-    // Remove from services array
+    // Remove from services array`
+    if (serviceIndex > -1) {
+        services.split(serviceIndex, 1);
+    }
 }
 
 server.addService(discoveryProto.DiscoveryService.service, {
@@ -88,7 +92,7 @@ server.addService(discoveryProto.DiscoveryService.service, {
     UnregisterService: unregisterService
 });
 
-server.bindAsync(addr(), grpc.ServerCredentials.createInsecure(), () => {
-    console.log("Discovery Service running on " + addr());
+server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
+    console.log("Discovery Service running on " + address());
     //server.start(); // No longer necessary to call this function, according to node
 })
