@@ -4,7 +4,8 @@
   "description": "Service which is run on individual robots",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main.js"
   },
   "author": "John Fergus Ginnane",
   "license": "ISC"
