@@ -2,4 +2,21 @@ syntax = "proto3";
 
 package discovery;
 
-service DiscoveryService { }
+service DiscoveryService {
+    // Unary gRPC functions to register a service with the discovery service
+    rpc RegisterService (RegisterRequest) returns (RegisterResponse);
+    rpc UnregisterService (UnregisterRequest) returns (UnregisterResponse);
+}
+
+message RegisterRequest {
+    string serviceName = 1;
+    string serviceAddress = 2;
+}
+
+message RegisterResponse { }
+
+message UnregisterRequest {
+    string serviceName = 1;
+}
+
+message UnregisterResponse { }
