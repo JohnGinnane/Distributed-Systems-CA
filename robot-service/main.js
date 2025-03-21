@@ -11,9 +11,10 @@ let ADDRESS           = "127.0.0.1";
 let PORT              = "50001";
 let serviceID         = "";
 
+const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
+
 function address() { return `${ADDRESS}:${PORT}`; }
 
-const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 discoveryService.registerService({
     serviceName: "robot",
     serviceAddress: address()
