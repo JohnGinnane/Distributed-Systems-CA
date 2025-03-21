@@ -13,7 +13,9 @@ message RegisterRequest {
     string serviceAddress = 2;
 }
 
-message RegisterResponse { }
+message RegisterResponse {
+    uint32 status = 1;
+}
 
 message UnregisterRequest {
     string serviceName = 1;

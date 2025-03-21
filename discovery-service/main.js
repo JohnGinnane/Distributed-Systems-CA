@@ -19,13 +19,16 @@ const registerService = (call, callback) => {
     const serviceName = call.request.serviceName;
     const serviceAddress = call.request.serviceAddress;
 
-    console.log(`Creating service ${serviceName} at ${serviceAddress}`);
+    console.log(`Creating service '${serviceName}' at ${serviceAddress}`);
 
     // Make sure service name is valid
 
     // Make sure service address is valid and not in use
 
     // Store in services array
+    
+    // All good on discovery, respond to service
+    callback(null, {status: 1});
 }
 
 const unregisterService = (call, callback) => {

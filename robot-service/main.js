@@ -17,6 +17,8 @@ discoveryService.registerService({
     serviceName: "robot",
     serviceAddress: addr()
 }, (error, response) => {
+    console.log("discoveryService");
+    
     if (error) {
         console.log("An error occurred trying to register with discovery service: ");
         console.log(error);
