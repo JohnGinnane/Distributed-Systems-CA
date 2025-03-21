@@ -1,6 +1,7 @@
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const path = require("path");
+const uuid = require("uuid");
 
 const PROTO_PATH = path.join(__dirname, "protos/discovery.proto");
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
@@ -19,8 +20,6 @@ const registerService = (call, callback) => {
     const serviceName = call.request.serviceName;
     const serviceAddress = call.request.serviceAddress;
 
-    console.log(`Creating service '${serviceName}' at ${serviceAddress}`);
-
     // Make sure service name is valid
     if (!serviceName) {
         var errMsg = `Service name '${serviceName}' is not valid!`;
@@ -35,7 +34,7 @@ const registerService = (call, callback) => {
 
     // Make sure service address is valid and not in use
     if (!serviceAddress) {
-        var errMsg = `Service address '${serviceName}' is not valid!`;
+        var errMsg = `Service address '${address}' is not valid!`;
         console.error(errMsg);
         callback({
             code: grpc.status.INVALID_ARGUMENT,
@@ -56,14 +55,24 @@ const registerService = (call, callback) => {
         return;
     }
 
+    // Generate a unique ID for new service
+    let newID = "";
+
+    while (newID == "" || services.find((x) => x.serverID == newID)) {
+        newID = uuid.v4();
+    }
+
+    console.log(`Registering service '${serviceName}' at ${serviceAddress} with ID ${newID}`);
+
     // Store in services array
     services.push({
-        serviceName: serviceName,
+        serviceID:      newID,
+        serviceName:    serviceName,
         serviceAddress: serviceAddress
     });
     
     // All good on discovery, respond to service
-    callback(null, {status: 1});
+    callback(null, {serviceID: newID});
 }
 
 const unregisterService = (call, callback) => {
