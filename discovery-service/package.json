@@ -8,5 +8,9 @@
     "start": "node main.js"
   },
   "author": "John Fergus Ginnane",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.13.1",
+    "@grpc/proto-loader": "^0.7.13"
+  }
 }
