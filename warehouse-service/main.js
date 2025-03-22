@@ -14,14 +14,14 @@ const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, 
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
-function listServices() {
+function listRobots() {
     var listServicesCall = discoveryService.listServices({});
 
     console.log("Listing robots:");
 
     listServicesCall.on("data", function (response) {
         if (!response) { return; }
-        
+
         if (response.serviceName.trim().toLowerCase() == "robot") {
             console.log(`${response.serviceID} @ ${response.serviceAddress}`);
         }
@@ -30,12 +30,10 @@ function listServices() {
     listServicesCall.on("end", function () {});
 
     listServicesCall.on("error", function (e) {
-        console.log("error listing robots");
+        console.log("Error listing robots:");
         console.error(e);
     })
 }
-
-console.log(`gonna register with address '${address()}'`);
 
 discoveryService.registerService({
     serviceName: "warehouse",
@@ -52,8 +50,6 @@ discoveryService.registerService({
         // Create service after registering with discovery service
         server = new grpc.Server();
 
-        listServices();
-
         // server.addService(discoveryProto.DiscoveryService.service, {
 
         // });
@@ -62,6 +58,8 @@ discoveryService.registerService({
             console.log("Warehouse Service running on " + address());
             //server.start(); // No longer necessary to call this function, according to node
         })
+        
+        listRobots();
     }
 });
 

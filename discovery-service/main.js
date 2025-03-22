@@ -29,10 +29,8 @@ function listServices(call, callback) {
 }
 
 const registerService = (call, callback) => {
-    console.log(1);
     const serviceName    = call.request.serviceName;
     const serviceAddress = call.request.serviceAddress;
-    console.log(2);
 
     // Make sure service name is valid
     if (!serviceName) {
@@ -45,7 +43,6 @@ const registerService = (call, callback) => {
 
         return;
     }
-    console.log(3);
 
     // Make sure service address is valid and not in use
     if (!serviceAddress) {
@@ -58,7 +55,6 @@ const registerService = (call, callback) => {
 
         return;
     }
-    console.log(4);
 
     if (services.find((x) => { if (x) { x.serviceAddress == serviceAddress; } })) {
         var errMsg = `Service address ${serviceAddress} is already registered!`;
@@ -70,7 +66,6 @@ const registerService = (call, callback) => {
 
         return;
     }
-    console.log(5);
 
     // Generate a unique ID for new service
     let newID = "";
@@ -78,7 +73,6 @@ const registerService = (call, callback) => {
     while (newID == "" || services.find((x) => { if (x) { x.serverID == newID; } })) {
         newID = uuid.v4();
     }
-    console.log(6);
 
     console.log(`Registering service '${serviceName}' at ${serviceAddress} with ID ${newID}`);
 
@@ -93,9 +87,7 @@ const registerService = (call, callback) => {
     callback(null, {serviceID: newID});
 }
 
-const unregisterService = (call, callback) => {
-    console.log("hello unregister");
-    
+const unregisterService = (call, callback) => {    
     const serviceID = call.request.serviceID;
 
     // Make sure service exists
@@ -104,10 +96,7 @@ const unregisterService = (call, callback) => {
     // Remove from services array`
     if (serviceIndex > -1) {
         console.log(`Service ID ${services[serviceIndex].serviceID} has been unregistered`);
-    
-        console.log(services);
-        delete services[serviceIndex];
-        console.log(services);
+        services.splice(serviceIndex, 1);
     }
 }
 
