@@ -14,6 +14,20 @@ const services = [];
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
+function listServices(call, callback) {
+    for (var i = 0; i < services.length; i++) {
+        var service = services[i];
+
+        call.write({
+            serviceID:      service.serviceID,
+            serviceName:    service.serviceName,
+            serviceAddress: service.serviceAddress
+        });
+    }
+
+    call.end();
+}
+
 const registerService = (call, callback) => {
     const serviceName    = call.request.serviceName;
     const serviceAddress = call.request.serviceAddress;
@@ -89,7 +103,8 @@ const server = new grpc.Server();
 
 server.addService(discoveryProto.DiscoveryService.service, {
     RegisterService:   registerService,
-    UnregisterService: unregisterService
+    UnregisterService: unregisterService,
+    ListServices:      listServices
 });
 
 server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {

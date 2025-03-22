@@ -6,6 +6,7 @@ service DiscoveryService {
     // Unary gRPC functions to register a service with the discovery service
     rpc RegisterService   (RegisterRequest)   returns (RegisterResponse);
     rpc UnregisterService (UnregisterRequest) returns (UnregisterResponse);
+    rpc ListServices      (ServiceRequest)    returns (stream ServiceResponse);
 }
 
 message RegisterRequest {
@@ -23,3 +24,11 @@ message UnregisterRequest {
 }
 
 message UnregisterResponse { }
+
+message ServiceRequest { }
+
+message ServiceResponse {
+    string serviceID      = 1;
+    string serviceName    = 2;
+    string serviceAddress = 3;
+}
