@@ -10,7 +10,7 @@ const discoveryProto = grpc.loadPackageDefinition(packageDefinition).discovery;
 let ADDRESS = "127.0.0.1";
 let PORT    = "50000";
 
-const services = [];
+let services = [];
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
@@ -29,8 +29,10 @@ function listServices(call, callback) {
 }
 
 const registerService = (call, callback) => {
+    console.log(1);
     const serviceName    = call.request.serviceName;
     const serviceAddress = call.request.serviceAddress;
+    console.log(2);
 
     // Make sure service name is valid
     if (!serviceName) {
@@ -43,6 +45,7 @@ const registerService = (call, callback) => {
 
         return;
     }
+    console.log(3);
 
     // Make sure service address is valid and not in use
     if (!serviceAddress) {
@@ -55,8 +58,9 @@ const registerService = (call, callback) => {
 
         return;
     }
+    console.log(4);
 
-    if (services.find((x) => x.serviceAddress == serviceAddress)) {
+    if (services.find((x) => { if (x) { x.serviceAddress == serviceAddress; } })) {
         var errMsg = `Service address ${serviceAddress} is already registered!`;
         console.error(errMsg);
         callback({
@@ -66,13 +70,15 @@ const registerService = (call, callback) => {
 
         return;
     }
+    console.log(5);
 
     // Generate a unique ID for new service
     let newID = "";
 
-    while (newID == "" || services.find((x) => x.serverID == newID)) {
+    while (newID == "" || services.find((x) => { if (x) { x.serverID == newID; } })) {
         newID = uuid.v4();
     }
+    console.log(6);
 
     console.log(`Registering service '${serviceName}' at ${serviceAddress} with ID ${newID}`);
 
@@ -88,14 +94,20 @@ const registerService = (call, callback) => {
 }
 
 const unregisterService = (call, callback) => {
+    console.log("hello unregister");
+    
     const serviceID = call.request.serviceID;
 
     // Make sure service exists
-    serviceIndex = services.findIndex((x) => x.serviceID == serviceID);
+    let serviceIndex = services.findIndex((x) => x.serviceID == serviceID);
 
     // Remove from services array`
     if (serviceIndex > -1) {
-        services.split(serviceIndex, 1);
+        console.log(`Service ID ${services[serviceIndex].serviceID} has been unregistered`);
+    
+        console.log(services);
+        delete services[serviceIndex];
+        console.log(services);
     }
 }
 
