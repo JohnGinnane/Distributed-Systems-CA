@@ -9,6 +9,7 @@ const discoveryProto = grpc.loadPackageDefinition(packageDefinition).discovery;
 
 let ADDRESS = "127.0.0.1";
 let PORT    = "50000";
+let server            = null;
 
 let services = [];
 
@@ -100,7 +101,7 @@ const unregisterService = (call, callback) => {
     }
 }
 
-const server = new grpc.Server();
+server = new grpc.Server();
 
 server.addService(discoveryProto.DiscoveryService.service, {
     RegisterService:   registerService,

@@ -10,6 +10,7 @@ let DISCOVERY_ADDRESS = "127.0.0.1:50000";
 let ADDRESS           = "127.0.0.1";
 let PORT              = "50100";
 let serviceID         = "";
+let server            = null;
 
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 
@@ -28,7 +29,7 @@ discoveryService.registerService({
         console.log(`Service registered with ID ${serviceID}`);
         
         // Create service after registering with discovery service
-        const server = new grpc.Server();
+        server = new grpc.Server();
 
         // server.addService(discoveryProto.DiscoveryService.service, {
 
