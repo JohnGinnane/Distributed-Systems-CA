@@ -57,9 +57,10 @@ discoveryService.registerService({
         server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
             console.log("Warehouse Service running on " + address());
             //server.start(); // No longer necessary to call this function, according to node
+            
+            listRobots();
         })
         
-        listRobots();
     }
 });
 

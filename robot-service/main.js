@@ -40,3 +40,30 @@ discoveryService.registerService({
         })
     }
 });
+
+function exitHandler() {
+    // Attempt to unregister the service
+    if (serviceID && discoveryService) {
+        discoveryService.unregisterService({serviceID: serviceID}, (error, response) => {
+            if (error) {
+                // Not sure we're worried about errors unregistering at this stage
+            } else {
+                // Neither are we interested in the response to unregistering as we exit
+            }
+        });
+    }
+
+    // Stop the server, to free up the port
+    if (server) {
+        server.forceShutdown();
+    }
+}
+
+// Handle the node.js program stopping
+// Make sure to unregister the service if possible
+// Inspired by https://stackoverflow.com/a/14032965
+process.on("exit",              exitHandler.bind());
+process.on("SIGINT",            exitHandler.bind());
+process.on("SIGUSR1",           exitHandler.bind());
+process.on("SIGUSR2",           exitHandler.bind());
+process.on("uncaughtException", exitHandler.bind());
