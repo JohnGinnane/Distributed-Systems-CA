@@ -38,9 +38,7 @@ function getFreePort(call, callback) {
     for (var i = 0; i < services.length; i++) {
         registeredPorts[i] = parseInt(services[i].serviceAddress.split(":")[1]);
     }
-
-    console.log(registeredPorts);
-
+    
     // Check if target port is in use
     if (registeredPorts.includes(targetPort)) {
         targetPort = 50100; // Minimum port for dynamic port allocation

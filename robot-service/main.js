@@ -16,15 +16,29 @@ const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, 
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
-discoveryService.registerService({
-    serviceName: "robot",
-    serviceAddress: address()
+// Find a free port for this service
+discoveryService.GetFreePort({
+    targetPort: PORT
 }, (error, response) => {
     if (error) {
-        console.log("An error occurred trying to register with discovery service: ");
+        console.log("An error occurred trying to get a free port from discovery service: ");
         console.error(error);
         return;
-    } else {
+    }
+        
+    PORT = response.freePort;
+
+    // Once we have our port we should register this server
+    discoveryService.registerService({
+        serviceName: "robot",
+        serviceAddress: address()
+    }, (error, response) => {
+        if (error) {
+            console.log("An error occurred trying to register with discovery service: ");
+            console.error(error);
+            return;
+        }
+        
         serviceID = response.serviceID;
         console.log(`Service registered with ID ${serviceID}`);
         
@@ -38,8 +52,8 @@ discoveryService.registerService({
         server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
             console.log("Robot Service running on " + address());
             //server.start(); // No longer necessary to call this function, according to node
-        })
-    }
+        });
+    });
 });
 
 function exitHandler() {
