@@ -3,7 +3,7 @@ const protoLoader = require("@grpc/proto-loader");
 const path = require("path");
 const uuid = require("uuid");
 
-const PROTO_PATH = path.join(__dirname, "protos/discovery.proto");
+const PROTO_PATH = path.join(__dirname, "../protos/discovery.proto");
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const discoveryProto = grpc.loadPackageDefinition(packageDefinition).discovery;
 
@@ -38,7 +38,7 @@ function getFreePort(call, callback) {
     for (var i = 0; i < services.length; i++) {
         registeredPorts[i] = parseInt(services[i].serviceAddress.split(":")[1]);
     }
-    
+
     // Check if target port is in use
     if (registeredPorts.includes(targetPort)) {
         targetPort = 50100; // Minimum port for dynamic port allocation

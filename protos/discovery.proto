@@ -6,8 +6,10 @@ service DiscoveryService {
     // Unary gRPC functions to register a service with the discovery service
     rpc RegisterService   (RegisterRequest)   returns (RegisterResponse);
     rpc UnregisterService (UnregisterRequest) returns (UnregisterResponse);
-    rpc ListServices      (ServiceRequest)    returns (stream ServiceResponse);
     rpc GetFreePort       (PortRequest)       returns (PortResponse);
+
+    // Serverside Stream gRPC function to list all services
+    rpc ListServices      (ServiceRequest)    returns (stream ServiceResponse);
 }
 
 message RegisterRequest {

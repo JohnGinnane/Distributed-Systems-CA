@@ -1,0 +1,20 @@
+import "google/protobuf/empty.proto";
+
+syntax = "proto3";
+
+package warehouse;
+
+service WarehouseService {
+    // Unary functions
+    rpc InsertLoadingBay    (stream LoadingBayRequest) returns (google.protobuf.Empty);
+    rpc RemoveLoadingBay    (LoadingBayRequest)        returns (google.protobuf.Empty);
+
+    // Server side stream functions
+    rpc ListLoadingBayItems (google.protobuf.Empty)    returns (stream LoadingBayRequest);
+}
+
+message LoadingBayRequest {
+    string itemName = 1;
+}
+
+message LoadingBayResponse { }

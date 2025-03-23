@@ -3,8 +3,8 @@ const protoLoader = require("@grpc/proto-loader");
 const path        = require("path");
 
 // We need to load discovery proto so this robot service and register itself
-const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "protos/discovery.proto"))).discovery;
-const robotProto     = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "protos/robot.proto"))).robot;
+const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/discovery.proto"))).discovery;
+const robotProto     = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/robot.proto"))).robot;
 
 let DISCOVERY_ADDRESS = "127.0.0.1:50000";
 let ADDRESS           = "127.0.0.1";

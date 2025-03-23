@@ -2,13 +2,16 @@ const grpc         = require("@grpc/grpc-js");
 const protoLoader  = require("@grpc/proto-loader");
 const path         = require("path");
 
-const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "protos/discovery.proto"))).discovery;
+const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/discovery.proto"))).discovery;
+const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
 
 let DISCOVERY_ADDRESS = "127.0.0.1:50000";
 let ADDRESS           = "127.0.0.1";
 let PORT              = "50001";
 let serviceID         = "";
 let server            = null;
+const MAX_SHELF_SIZE  = 20;
+const Shelves         = [];
 
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 
