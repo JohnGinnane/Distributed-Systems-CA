@@ -7,9 +7,10 @@ const PROTO_PATH = path.join(__dirname, "protos/discovery.proto");
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const discoveryProto = grpc.loadPackageDefinition(packageDefinition).discovery;
 
-let ADDRESS = "127.0.0.1";
-let PORT    = "50000";
-let server            = null;
+let ADDRESS   = "127.0.0.1";
+let PORT      = "50000";
+let serviceID = "";
+let server    = null;
 
 let services = [];
 
@@ -27,6 +28,29 @@ function listServices(call, callback) {
     }
 
     call.end();
+}
+
+function getFreePort(call, callback) {
+    let targetPort = parseInt(call.request.targetPort);
+
+    // Organise all registered services' ports into an array
+    let registeredPorts = []
+    for (var i = 0; i < services.length; i++) {
+        registeredPorts[i] = parseInt(services[i].serviceAddress.split(":")[1]);
+    }
+
+    console.log(registeredPorts);
+
+    // Check if target port is in use
+    if (registeredPorts.includes(targetPort)) {
+        targetPort = 50100; // Minimum port for dynamic port allocation
+
+        while (registeredPorts.includes(targetPort)) {
+            targetPort++;
+        }
+    }
+
+    callback(null, { freePort: targetPort });
 }
 
 const registerService = (call, callback) => {
@@ -106,11 +130,23 @@ server = new grpc.Server();
 server.addService(discoveryProto.DiscoveryService.service, {
     RegisterService:   registerService,
     UnregisterService: unregisterService,
-    ListServices:      listServices
+    ListServices:      listServices,
+    GetFreePort:       getFreePort,
 });
 
 server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
     console.log("Discovery Service running on " + address());
+
+    // Register the discovery service
+    let newID = uuid.v4();
+    serviceID = newID;
+
+    services.push({
+        serviceID:      newID,
+        serviceName:    "discovery",
+        serviceAddress: address()
+    });
+    
     //server.start(); // No longer necessary to call this function, according to node
 })
 

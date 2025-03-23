@@ -7,6 +7,7 @@ service DiscoveryService {
     rpc RegisterService   (RegisterRequest)   returns (RegisterResponse);
     rpc UnregisterService (UnregisterRequest) returns (UnregisterResponse);
     rpc ListServices      (ServiceRequest)    returns (stream ServiceResponse);
+    rpc GetFreePort       (PortRequest)       returns (PortResponse);
 }
 
 message RegisterRequest {
@@ -31,4 +32,12 @@ message ServiceResponse {
     string serviceID      = 1;
     string serviceName    = 2;
     string serviceAddress = 3;
+}
+
+message PortRequest {
+    uint32 targetPort = 1;
+}
+
+message PortResponse {
+    uint32 freePort = 1;
 }

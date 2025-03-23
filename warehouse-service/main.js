@@ -1,6 +1,6 @@
-const grpc        = require("@grpc/grpc-js");
-const protoLoader = require("@grpc/proto-loader");
-const path        = require("path");
+const grpc         = require("@grpc/grpc-js");
+const protoLoader  = require("@grpc/proto-loader");
+const path         = require("path");
 
 const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "protos/discovery.proto"))).discovery;
 
