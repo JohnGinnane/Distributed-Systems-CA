@@ -5,13 +5,6 @@ const readlineSync = require("readline-sync");
 
 let DISCOVERY_ADDRESS = "127.0.0.1:50000";
 let WAREHOUSE_ADDRESS = "127.0.0.1:50001";
-let ADDRESS           = "127.0.0.1";
-let PORT              = "50100";
-let serviceID         = "";
-let server            = null;
-
-function address() { return `${ADDRESS}:${PORT}`; }
-
 
 const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/discovery.proto"))).discovery;
 const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
@@ -19,45 +12,37 @@ const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 const warehouseService = new warehouseProto.WarehouseService(WAREHOUSE_ADDRESS, grpc.credentials.createInsecure());
 
-// Find a free port for this service
-discoveryService.GetFreePort({
-    targetPort: PORT
-}, (error, response) => {
-    if (error) {
-        console.log("An error occurred trying to get a free port from discovery service: ");
-        console.error(error);
-        return;
-    }
+// let userInput = "";
 
-    PORT = response.freePort;
+// console.log("0. to quit");
+// console.log("1. List robots");
 
-    // Once we have our port we should register this service
-    discoveryService.RegisterService({
-        serviceName: "client",
-        serviceAddress: address()
-    }, (error, response) => {
-        if (error) {
-            console.log("An error occurred trying to register with discovery service: ");
-            console.error(error);
-            return;
-        }
-        serviceID = response.serviceID;
-        console.log(`Service registered with ID ${serviceID}`);
+// while (userInput != "0") {
+//     //console.log("\u001B[2J\u001B[0;0f");
 
-        // Start client server so we can control the warehouse
-        server = new grpc.Server();
+//     // Sanitise all user inputs
+//     userInput = readlineSync.questionInt("").toString().trim().toLowerCase();
+//     console.log(`User input: '${userInput}'`);
+    
+//     switch (userInput) {
+//         case "1":
+//             break;
+//         default:
+//             break;
+//     }
+// }
 
-        server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
+var listRobotsCall = warehouseService.ListRobots({});
 
-        });
-        
-        let userInput = "";
+listRobotsCall.on("data", function (response) {
+    if (!response) { return; }
 
-        while (userInput != "0") {
-            console.log("\u001B[2J\u001B[0;0f");
-            console.log("test hello world");
-            console.log("0 to quit");
-            userInput = readlineSync.questionInt("Enter option: ").toString().trim().toLowerCase();
-        }
-    });
+    console.log(`${response.serviceID} @ ${response.serviceAddress}`);
+});
+
+listRobotsCall.on("end", ()=>{});
+
+listRobotsCall.on("error", (e) => {
+    console.log("Error listing robots:");
+    console.error(e);
 });

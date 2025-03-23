@@ -17,25 +17,38 @@ const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, 
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
-function listRobots() {
+function listRobots(call, callback) {
+    // Call the discovery service's function
+    // and stream on the robot services
     var listServicesCall = discoveryService.listServices({});
-
-    console.log("Listing robots:");
 
     listServicesCall.on("data", function (response) {
         if (!response) { return; }
 
         if (response.serviceName.trim().toLowerCase() == "robot") {
-            console.log(`${response.serviceID} @ ${response.serviceAddress}`);
+            call.write({
+                serviceID:      response.serviceID,
+                serviceName:    response.serviceName,
+                serviceAddress: response.serviceAddress
+            });
         }
     });
 
-    listServicesCall.on("end", function () {});
+    listServicesCall.on("end", () => {
+        // When listing services function has finished streaming
+        // then end this function's stream
+        call.end();
+    });
 
     listServicesCall.on("error", function (e) {
         console.log("Error listing robots:");
         console.error(e);
-    })
+
+        callback({
+            code: grpc.status.INTERNAL,
+            details: e
+        });
+    });
 }
 
 discoveryService.registerService({
@@ -53,15 +66,13 @@ discoveryService.registerService({
         // Create service after registering with discovery service
         server = new grpc.Server();
 
-        // server.addService(discoveryProto.DiscoveryService.service, {
-
-        // });
+        server.addService(warehouseProto.WarehouseService.service, {
+            ListRobots: listRobots
+        });
 
         server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
             console.log("Warehouse Service running on " + address());
             //server.start(); // No longer necessary to call this function, according to node
-            
-            listRobots();
         })
         
     }

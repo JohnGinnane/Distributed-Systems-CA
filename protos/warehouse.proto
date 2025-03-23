@@ -10,6 +10,7 @@ service WarehouseService {
     rpc RemoveLoadingBay    (LoadingBayRequest)        returns (google.protobuf.Empty);
 
     // Server side stream functions
+    rpc ListRobots          (google.protobuf.Empty)    returns (stream RobotResponse);
     rpc ListLoadingBayItems (google.protobuf.Empty)    returns (stream LoadingBayRequest);
 }
 
@@ -18,3 +19,9 @@ message LoadingBayRequest {
 }
 
 message LoadingBayResponse { }
+
+message RobotResponse {
+    string serviceID = 1;
+    string serviceName = 2;
+    string serviceAddress = 3;
+}
