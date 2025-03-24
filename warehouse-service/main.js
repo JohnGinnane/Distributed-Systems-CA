@@ -11,8 +11,8 @@ let PORT              = "50001";
 let serviceID         = "";
 let server            = null;
 const MAX_SHELF_SIZE  = 20;
-const Shelves         = [];
-const LoadingBay      = [];
+let Shelves           = [];
+let LoadingBay        = [];
 
 // Sample data
 LoadingBay.push("iPod");
@@ -32,11 +32,11 @@ function address() { return `${ADDRESS}:${PORT}`; }
 function insertLoadingBay(call, callback) {
     try {
         call.on("data", (LoadingBayRequest) => {
-            const itemName = LoadingBayRequest.itemName.trim().toLowerCase();
+            const itemName = LoadingBayRequest.itemName.trim();
     
             if (itemName) {
-                LoadingBay.push();
-                console.log(`${LoadingBayRequest.itemName} added to loading bay`);
+                LoadingBay.push(itemName);
+                console.log(`Item '${LoadingBayRequest.itemName}' added to loading bay`);
             } else {
                 // throw error if invalid name?
             }
@@ -72,15 +72,24 @@ function listLoadingBayItems(call, callback) {
 
 function removeLoadingBay(call, callback) {
     try {
-        const itemName = call.request.itemName.trim().toLowerCase();
-        const itemIndex = LoadingBay.findIndex((x) => x.itemName == itemName);
+        const itemName = call.request.itemName.trim();
+        console.log(`Removing '${itemName}' from the loading bay`);
+
+        console.log(LoadingBay);
+        let itemIndex = LoadingBay.findIndex((x) => x == itemName);
+        console.log(`Found index ${itemIndex}`);
 
         if (itemIndex > -1) {
             LoadingBay.splice(itemIndex, 1);
             console.log(`Removed one of '${itemName}' from the loading bay`);
-        }
 
-        callback(null, { });
+            callback(null, { });
+        } else {
+            callback({
+                status: grpc.status.NOT_FOUND,
+                details: `Item '${itemName}' not found in loading bay`
+            });
+        }
     } catch (ex) {
         // Catch exception and handle
         callback({

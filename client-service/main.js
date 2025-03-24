@@ -51,6 +51,56 @@ function listLoadingBayItems() {
     });
 }
 
+function insertLoadingBay() {
+    const call = warehouseService.InsertLoadingBay((error, response) => {
+        if (error) {
+            console.log("An error occurred trying to insert loading bay items: ");
+            console.error(error);
+        } else {
+            console.log(response.message);
+        }
+    });
+
+    let moreOrders = true;
+
+    while (moreOrders) {
+        const itemName = readlineSync.question("Enter item name: ");
+
+        if (!itemName) {
+            console.log("Please enter a valid item name!");
+        } else {
+            call.write({itemName: itemName});
+
+            moreOrders = readlineSync.keyInYN("Do you want to add more to the order? ");
+        }
+    }
+
+    call.end();
+}
+
+function removeLoadingBay() {
+    while (true) {
+        const itemName = readlineSync.question("What item do you want to remove from the loading bay? ");
+
+        if (!itemName) {
+            console.log("Please enter a valid item name!");
+            continue;
+        }
+    
+        warehouseService.RemoveLoadingBay({itemName: itemName}, (error, response) => {
+            if (error) {
+                console.log(`An error occurred trying to remove the item '${itemName}'`);
+                console.error(error);
+                return;
+            }
+
+            console.log(`Successfully removed ${itemName} from the loading bay`);
+        })
+
+        break;
+    }
+}
+
 console.log("0. to quit");
 console.log("1. List robots");
 console.log("2. List loading bay items");
@@ -67,6 +117,15 @@ switch (userInput) {
 
     case "2":
         listLoadingBayItems();
+        break;
+
+    case "3":
+        insertLoadingBay();
+        break;
+
+    case "4":
+        removeLoadingBay();
+        break;
 
     default:
         break;
