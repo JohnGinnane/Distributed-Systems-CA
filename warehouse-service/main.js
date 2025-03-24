@@ -12,10 +12,83 @@ let serviceID         = "";
 let server            = null;
 const MAX_SHELF_SIZE  = 20;
 const Shelves         = [];
+const LoadingBay      = [];
+
+// Sample data
+LoadingBay.push("iPod");
+LoadingBay.push("Calculator");
+LoadingBay.push("Mobile Phone");
+LoadingBay.push("Multimeter");
+LoadingBay.push("Saxophone");
+LoadingBay.push("Speaker");
+LoadingBay.push("Bowl");
+LoadingBay.push("Map");
+LoadingBay.push("Lamp");
 
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 
 function address() { return `${ADDRESS}:${PORT}`; }
+
+function insertLoadingBay(call, callback) {
+    try {
+        call.on("data", (LoadingBayRequest) => {
+            const itemName = LoadingBayRequest.itemName.trim().toLowerCase();
+    
+            if (itemName) {
+                LoadingBay.push();
+                console.log(`${LoadingBayRequest.itemName} added to loading bay`);
+            } else {
+                // throw error if invalid name?
+            }
+        });
+    
+        call.on("end", () => {
+            callback(null, { });
+        })
+    } catch (ex) {
+        // Catch exception and handle
+        callback({
+            status: grpc.status.INTERNAL,
+            details: ex
+        });
+    }
+}
+
+function listLoadingBayItems(call, callback) {
+    try {
+        for (var i = 0; i < LoadingBay.length; i++) {
+            call.write({ itemName: LoadingBay[i] });
+        }
+
+        call.end();
+    } catch (ex) {
+        // Catch exception and handle
+        callback({
+            status: grpc.status.INTERNAL,
+            details: ex
+        });
+    }
+}
+
+function removeLoadingBay(call, callback) {
+    try {
+        const itemName = call.request.itemName.trim().toLowerCase();
+        const itemIndex = LoadingBay.findIndex((x) => x.itemName == itemName);
+
+        if (itemIndex > -1) {
+            LoadingBay.splice(itemIndex, 1);
+            console.log(`Removed one of '${itemName}' from the loading bay`);
+        }
+
+        callback(null, { });
+    } catch (ex) {
+        // Catch exception and handle
+        callback({
+            status: grpc.status.INTERNAL,
+            details: ex
+        });
+    }
+}
 
 function listRobots(call, callback) {
     // Call the discovery service's function
@@ -67,7 +140,11 @@ discoveryService.registerService({
         server = new grpc.Server();
 
         server.addService(warehouseProto.WarehouseService.service, {
-            ListRobots: listRobots
+            InsertLoadingBay:    insertLoadingBay,
+            RemoveLoadingBay:    removeLoadingBay,
+
+            ListRobots:          listRobots,
+            ListLoadingBayItems: listLoadingBayItems
         });
 
         server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
