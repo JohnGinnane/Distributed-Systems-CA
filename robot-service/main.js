@@ -11,10 +11,40 @@ let ADDRESS           = "127.0.0.1";
 let PORT              = "50100";
 let serviceID         = "";
 let server            = null;
+let position          = "loading_bay";
+let status            = "idle";
+let heldItem          = "";
+
+/*
+ * Valid locations:
+ *   loading_bay
+ *   shelf:1
+ *   shelf:2
+ *   etc.
+ */
 
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 
 function address() { return `${ADDRESS}:${PORT}`; }
+
+function loadItem(call, callback) {
+    // Robot must be placed at location that
+    // contains the item we want to load
+    const itemName = call.request.itemName;
+}
+
+function unloadItem(call, callback) {
+    // Will drop the held item at location
+}
+
+function goToLocation(call, callback) {
+    // Goes to location
+    const newLocation = call.request.itemName;
+
+    position = newLocation;
+
+    callback(null, { });
+}
 
 // Find a free port for this service
 discoveryService.GetFreePort({

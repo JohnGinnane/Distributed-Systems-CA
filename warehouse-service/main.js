@@ -14,6 +14,8 @@ const MAX_SHELF_SIZE  = 20;
 let Shelves           = [];
 let LoadingBay        = [];
 
+
+
 // Sample data
 LoadingBay.push("iPod");
 LoadingBay.push("Calculator");

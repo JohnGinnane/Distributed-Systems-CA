@@ -9,6 +9,20 @@ const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join
 
 const warehouseService = new warehouseProto.WarehouseService(WAREHOUSE_ADDRESS, grpc.credentials.createInsecure());
 
+let userInput = "";
+
+/* 
+ * Process program parameters
+ *   process.argv[0]    = node.js
+ *   process.argv[1]    = this-file.js
+ *   process.argv[2..N] = parameters
+ */
+
+// Extract option from parameters
+if (process.argv[2]) {
+    userInput = process.argv[2].toString().trim().toLowerCase();
+}
+
 function listRobots() {
     var listRobotsCall = warehouseService.ListRobots({});
 
@@ -101,14 +115,16 @@ function removeLoadingBay() {
     }
 }
 
-console.log("0. to quit");
-console.log("1. List robots");
-console.log("2. List loading bay items");
-console.log("3. Insert loading bay items");
-console.log("4. Remove loading bay item");
-
 // Sanitise all user inputs
-let userInput = readlineSync.questionInt("").toString().trim().toLowerCase();
+if (!userInput) {
+    console.log("0. to quit");
+    console.log("1. List robots");
+    console.log("2. List loading bay items");
+    console.log("3. Insert loading bay items");
+    console.log("4. Remove loading bay item");
+    
+    userInput = readlineSync.questionInt("\nEnter Option: ").toString().trim().toLowerCase();
+}
 
 switch (userInput) {
     case "1":

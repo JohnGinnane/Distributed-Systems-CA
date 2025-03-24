@@ -9,6 +9,8 @@ service WarehouseService {
     rpc InsertLoadingBay    (stream LoadingBayRequest) returns (google.protobuf.Empty);
     rpc RemoveLoadingBay    (LoadingBayRequest)        returns (google.protobuf.Empty);
 
+    rpc SetRobotStatus      (ReportStatusRequest)      returns (google.protobuf.Empty);
+
     // Server side stream functions
     rpc ListRobots          (google.protobuf.Empty)    returns (stream RobotResponse);
     rpc ListLoadingBayItems (google.protobuf.Empty)    returns (stream LoadingBayRequest);
@@ -21,7 +23,13 @@ message LoadingBayRequest {
 message LoadingBayResponse { }
 
 message RobotResponse {
-    string serviceID = 1;
-    string serviceName = 2;
+    string serviceID      = 1;
+    string serviceName    = 2;
     string serviceAddress = 3;
+}
+
+message ReportStatusRequest {
+    string serviceID = 1;
+    string status    = 2;
+    string location  = 3;
 }

@@ -3,5 +3,9 @@ syntax = "proto3";
 package robot;
 
 service RobotService {
-
+    // Unary functions
+    rpc LoadItem   (ItemRequest)           returns (google.protobuf.Empty);
+    rpc UnloadItem (google.protobuf.Empty) returns (google.protobuf.Empty);
 }
+
+message

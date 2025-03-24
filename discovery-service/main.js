@@ -16,6 +16,16 @@ let services = [];
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
+function generateNewID() {
+    let newID = "";
+
+    while (newID == "" || services.find((x) => { if (x) { x.serverID == newID; } })) {
+        newID = uuid.v4().substring(1, 5);
+    }
+
+    return newID;
+}
+
 function listServices(call, callback) {
     for (var i = 0; i < services.length; i++) {
         var service = services[i];
@@ -91,11 +101,7 @@ const registerService = (call, callback) => {
     }
 
     // Generate a unique ID for new service
-    let newID = "";
-
-    while (newID == "" || services.find((x) => { if (x) { x.serverID == newID; } })) {
-        newID = uuid.v4();
-    }
+    let newID = generateNewID();
 
     console.log(`Registering service '${serviceName}' at ${serviceAddress} with ID ${newID}`);
 
@@ -136,11 +142,10 @@ server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
     console.log("Discovery Service running on " + address());
 
     // Register the discovery service
-    let newID = uuid.v4();
-    serviceID = newID;
+    serviceID = generateNewID();
 
     services.push({
-        serviceID:      newID,
+        serviceID:      serviceID,
         serviceName:    "discovery",
         serviceAddress: address()
     });
