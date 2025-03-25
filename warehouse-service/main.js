@@ -10,56 +10,106 @@ let ADDRESS           = "127.0.0.1";
 let PORT              = "50001";
 let serviceID         = "";
 let server            = null;
+let locations         = [];
 const MAX_SHELF_SIZE  = 20;
-let Shelves           = [];
 let LoadingBay        = [];
 
+function generateNewID() {
+    let newID = "";
 
+    while (newID == "" || services.find((x) => { if (x) { x.serverID == newID; } })) {
+        newID = uuid.v4().substring(1, 5);
+    }
+
+    return newID;
+}
+
+function add(itemName, locationNameOrID) {
+    if (!itemName) { return; }
+
+    for (let i = 0; i < locations.length; i++) {
+        let loc = locations[i]
+        if (loc.ID == locationNameOrID || loc.Name == locationNameOrID) {
+            if (loc.Items.length >= loc.MaxSize) {
+                throw new Error(`Location ${loc.ID} is at capacity!`);
+            }
+            
+            loc.Items.push(itemName);
+            break;
+        }
+    }
+}
+
+function remove(itemName, locationNameOrID) {
+    if (!itemName) { return; }
+
+    for (let i = 0; i < locations.length; i++) {
+        let loc = locations[i]
+        if (loc.ID == locationNameOrID || loc.Name == locationNameOrID) {
+            let itemIndex = loc.Items.findIndex((x) => { x == itemName; });
+            
+            if (itemIndex > -1) {
+                loc.Items.split(itemIndex, 1);
+                break;
+            }
+        }
+    }
+}
+
+// Set up loading bay location
+locations.push({
+    ID: generateNewID(),
+    Name: "loading_bay",
+    MaxSize: MAX_SHELF_SIZE,
+    Items: []
+});
+
+// Set up first shelf
+locations.push({
+    ID: generateNewID(),
+    name: "shelf:1",
+    maxSize: MAX_SHELF_SIZE,
+    items: []
+});
 
 // Sample data
-LoadingBay.push("iPod");
-LoadingBay.push("Calculator");
-LoadingBay.push("Mobile Phone");
-LoadingBay.push("Multimeter");
-LoadingBay.push("Saxophone");
-LoadingBay.push("Speaker");
-LoadingBay.push("Bowl");
-LoadingBay.push("Map");
-LoadingBay.push("Lamp");
+add("loading_bay", "iPod");
+add("loading_bay", "iPod");
+add("loading_bay", "Calculator");
+add("loading_bay", "Mobile Phone");
+add("loading_bay", "Multimeter");
+add("loading_bay", "Saxophone");
+add("loading_bay", "Speaker");
+add("loading_bay", "Bowl");
+add("loading_bay", "Map");
+add("loading_bay", "Lamp");
 
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
-function insertLoadingBay(call, callback) {
-    try {
-        call.on("data", (LoadingBayRequest) => {
-            const itemName = LoadingBayRequest.itemName.trim();
-    
-            if (itemName) {
-                LoadingBay.push(itemName);
-                console.log(`Item '${LoadingBayRequest.itemName}' added to loading bay`);
-            } else {
-                // throw error if invalid name?
-            }
-        });
-    
-        call.on("end", () => {
-            callback(null, { });
-        })
-    } catch (ex) {
-        // Catch exception and handle
-        callback({
-            status: grpc.status.INTERNAL,
-            details: ex
-        });
-    }
+function getLocationByNameOrID(nameOrID) {
+    return locations.find((x) => { x.Name == nameOrID || x.ID == nameOrID});
 }
 
-function listLoadingBayItems(call, callback) {
+function listLocationItems(call, callback) {
+    const locationNameOrID = call.request.locationNameOrID;
+    let loc = getLocationByNameOrID(locationNameOrID);
+
+    // Make sure we found a location
+    if (!loc) {
+        callback({
+            status: grpc.status.NOT_FOUND,
+            details: `No location found for '${locationNameOrID}'`
+        })
+
+        return;
+    }
+
     try {
-        for (var i = 0; i < LoadingBay.length; i++) {
-            call.write({ itemName: LoadingBay[i] });
+        // Stream the location's items
+        for (var i = 0; i < loc.Items.length; i++) {
+            call.write({ itemName: loc.Items[i] });
         }
 
         call.end();
@@ -72,26 +122,53 @@ function listLoadingBayItems(call, callback) {
     }
 }
 
-function removeLoadingBay(call, callback) {
+function addToLocation(call, callback) {
+    // Client side streaming
     try {
-        const itemName = call.request.itemName.trim();
-        console.log(`Removing '${itemName}' from the loading bay`);
+        call.on("data", (AddToLocationRequest) => {
+            const locationNameOrID = AddToLocationRequest.locationNameOrID;
+            let loc = getLocationByNameOrID(locationNameOrID);
+        
+            // Make sure we found a location
+            if (!loc) {
+                callback({
+                    status: grpc.status.NOT_FOUND,
+                    details: `No location found for '${locationNameOrID}'`
+                })
+        
+                return;
+            }
 
-        console.log(LoadingBay);
-        let itemIndex = LoadingBay.findIndex((x) => x == itemName);
-        console.log(`Found index ${itemIndex}`);
+            add(AddToLocationRequest.itemName, loc.ID);
+        })
+    } catch (ex) {
+        // Catch exception and handle
+        callback({
+            status: grpc.status.INTERNAL,
+            details: ex
+        });
+    }
+}
 
-        if (itemIndex > -1) {
-            LoadingBay.splice(itemIndex, 1);
-            console.log(`Removed one of '${itemName}' from the loading bay`);
+function removeFromLocation(call, callback) {
+    // Client side streaming
+    try {
+        call.on("data", (AddToLocationRequest) => {
+            const locationNameOrID = AddToLocationRequest.locationNameOrID;
+            let loc = getLocationByNameOrID(locationNameOrID);
+        
+            // Make sure we found a location
+            if (!loc) {
+                callback({
+                    status: grpc.status.NOT_FOUND,
+                    details: `No location found for '${locationNameOrID}'`
+                })
+        
+                return;
+            }
 
-            callback(null, { });
-        } else {
-            callback({
-                status: grpc.status.NOT_FOUND,
-                details: `Item '${itemName}' not found in loading bay`
-            });
-        }
+            remove(AddToLocationRequest.itemName, loc.ID);
+        })
     } catch (ex) {
         // Catch exception and handle
         callback({
@@ -135,6 +212,19 @@ function listRobots(call, callback) {
     });
 }
 
+function listLocations(call, callback) {
+    for (let i = 0; i < locations.length; i++) {
+        call.write({
+            locationID:        locations[i].ID,
+            locationName:      locations[i].Name,
+            locationItemCount: locations[i].Items.length,
+            locationMaxSize:   locations[i].MaxSize
+        });
+    }
+
+    call.end();
+}
+
 discoveryService.registerService({
     serviceName: "warehouse",
     serviceAddress: address()
@@ -151,11 +241,12 @@ discoveryService.registerService({
         server = new grpc.Server();
 
         server.addService(warehouseProto.WarehouseService.service, {
-            InsertLoadingBay:    insertLoadingBay,
-            RemoveLoadingBay:    removeLoadingBay,
+            AddToLocation:       addToLocation,
+            RemoveFromLocation:  removeFromLocation,
 
             ListRobots:          listRobots,
-            ListLoadingBayItems: listLoadingBayItems
+            ListLocations:       listLocations,
+            ListLocationItems:   listLocationItems
         });
 
         server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {

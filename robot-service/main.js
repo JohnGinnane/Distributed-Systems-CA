@@ -31,6 +31,9 @@ function loadItem(call, callback) {
     // Robot must be placed at location that
     // contains the item we want to load
     const itemName = call.request.itemName;
+    const location = self.position;
+    
+    // Trying to remove item from location
 }
 
 function unloadItem(call, callback) {
@@ -43,7 +46,11 @@ function goToLocation(call, callback) {
 
     position = newLocation;
 
-    callback(null, { });
+    // Wait 1000ms before reporting that we're at the location
+    setTimeout(() => {
+        callback(null, {});
+        this.position = "";
+    }, 1000);
 }
 
 // Find a free port for this service

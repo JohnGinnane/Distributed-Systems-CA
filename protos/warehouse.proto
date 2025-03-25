@@ -6,30 +6,68 @@ package warehouse;
 
 service WarehouseService {
     // Unary functions
-    rpc InsertLoadingBay    (stream LoadingBayRequest) returns (google.protobuf.Empty);
-    rpc RemoveLoadingBay    (LoadingBayRequest)        returns (google.protobuf.Empty);
+    rpc LoadItem            (LoadItemRequest)           returns (LoadItemResponse);
+    rpc UnloadItem          (UnloadItemRequest)         returns (UnloadItemResponse);
+    rpc SetRobotStatus      (ReportStatusRequest)       returns (google.protobuf.Empty);
 
-    rpc SetRobotStatus      (ReportStatusRequest)      returns (google.protobuf.Empty);
+    // Client side stream functions
+    rpc AddToLocation       (AddToLocationRequest)      returns (google.protobuf.Empty);
+    rpc RemoveFromLocation  (RemoveFromLocationRequest) returns (google.protobuf.Empty);
 
     // Server side stream functions
     rpc ListRobots          (google.protobuf.Empty)    returns (stream RobotResponse);
-    rpc ListLoadingBayItems (google.protobuf.Empty)    returns (stream LoadingBayRequest);
+    rpc ListLocations       (google.protobuf.Empty)    returns (stream LocationResponse);
+    rpc ListLocationItems   (ListLocationItemsRequest) returns (stream ItemResponse);
 }
 
-message LoadingBayRequest {
-    string itemName = 1;
+message LoadItemRequest {
+    string locationID = 1;
+    string itemName   = 2;
 }
 
-message LoadingBayResponse { }
+message LoadItemResponse { }
 
+message UnloadItemRequest {
+    string locationID = 1;
+    string itemName   = 2;
+}
+
+message UnloadItemResponse { }
+
+message ReportStatusRequest {
+    string serviceID = 1;
+    string status    = 2;
+    string location  = 3;
+}
+
+message AddToLocationRequest {
+    string locationNameOrID = 1;
+    string itemName = 2;
+}
+
+message RemoveFromLocationRequest {
+    string locationNameOrID = 1;
+    string itemName = 2;
+}
+
+// Server streaming
 message RobotResponse {
     string serviceID      = 1;
     string serviceName    = 2;
     string serviceAddress = 3;
 }
 
-message ReportStatusRequest {
-    string serviceID = 1;
-    string status    = 2;
-    string location  = 3;
+message LocationResponse {
+    string locationID        = 1;
+    string locationName      = 2;
+    uint32 locationItemCount = 3;
+    uint32 locationMaxSize   = 4;
+}
+
+message ListLocationItemsRequest {
+    string locationNameOrID = 1;
+}
+
+message ItemResponse {
+    string itemName = 1;
 }

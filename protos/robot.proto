@@ -4,8 +4,16 @@ package robot;
 
 service RobotService {
     // Unary functions
-    rpc LoadItem   (ItemRequest)           returns (google.protobuf.Empty);
-    rpc UnloadItem (google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc LoadItem     (ItemRequest)           returns (google.protobuf.Empty);
+    rpc UnloadItem   (google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc GoToLocation (LocationRequest)       returns (google.protobuf.Empty);
 }
 
-message
+message ItemRequest {
+    string itemName = 1;
+}
+
+message GoToLocation {
+    // Allow searching by either human friendly name or UUID
+    string locationIDOrName = 1; 
+}
