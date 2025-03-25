@@ -1,6 +1,7 @@
 const grpc         = require("@grpc/grpc-js");
 const protoLoader  = require("@grpc/proto-loader");
 const path         = require("path");
+const uuid = require("uuid");
 
 const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/discovery.proto"))).discovery;
 const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
@@ -12,47 +13,48 @@ let serviceID         = "";
 let server            = null;
 let locations         = [];
 const MAX_SHELF_SIZE  = 20;
-let LoadingBay        = [];
 
 function generateNewID() {
     let newID = "";
 
-    while (newID == "" || services.find((x) => { if (x) { x.serverID == newID; } })) {
+    while (newID == "" || locations.find((x) => { if (x) { x.ID == newID; } })) {
         newID = uuid.v4().substring(1, 5);
     }
 
     return newID;
 }
 
+function getLocationByNameOrID(nameOrID) {
+    return locations.find((x) => { x.Name == nameOrID || x.ID == nameOrID});
+}
+
 function add(itemName, locationNameOrID) {
     if (!itemName) { return; }
+    let loc = getLocationByNameOrID(locationNameOrID);
 
-    for (let i = 0; i < locations.length; i++) {
-        let loc = locations[i]
-        if (loc.ID == locationNameOrID || loc.Name == locationNameOrID) {
-            if (loc.Items.length >= loc.MaxSize) {
-                throw new Error(`Location ${loc.ID} is at capacity!`);
-            }
-            
-            loc.Items.push(itemName);
-            break;
-        }
+    // Couldn't find location
+    // maybe throw error?
+    if (!loc) { return; }
+
+    if (loc.Items.length >= loc.MaxSize) {
+        throw new Error(`Location ${loc.ID} is at capacity!`);
     }
+    
+    loc.Items.push(itemName);
 }
 
 function remove(itemName, locationNameOrID) {
     if (!itemName) { return; }
+    let loc = getLocationByNameOrID(locationNameOrID);
 
-    for (let i = 0; i < locations.length; i++) {
-        let loc = locations[i]
-        if (loc.ID == locationNameOrID || loc.Name == locationNameOrID) {
-            let itemIndex = loc.Items.findIndex((x) => { x == itemName; });
-            
-            if (itemIndex > -1) {
-                loc.Items.split(itemIndex, 1);
-                break;
-            }
-        }
+    // Couldn't find location
+    if (!loc) { return; }
+
+    let itemIndex = loc.Items.findIndex((x) => { x == itemName; });
+
+    // If that item was found in that location
+    if (itemIndex > -1) {
+        loc.Items.split(itemIndex, 1);
     }
 }
 
@@ -67,9 +69,9 @@ locations.push({
 // Set up first shelf
 locations.push({
     ID: generateNewID(),
-    name: "shelf:1",
-    maxSize: MAX_SHELF_SIZE,
-    items: []
+    Name: "shelf:1",
+    MaxSize: MAX_SHELF_SIZE,
+    Items: []
 });
 
 // Sample data
@@ -87,10 +89,6 @@ add("loading_bay", "Lamp");
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 
 function address() { return `${ADDRESS}:${PORT}`; }
-
-function getLocationByNameOrID(nameOrID) {
-    return locations.find((x) => { x.Name == nameOrID || x.ID == nameOrID});
-}
 
 function listLocationItems(call, callback) {
     const locationNameOrID = call.request.locationNameOrID;

@@ -19,7 +19,7 @@ function address() { return `${ADDRESS}:${PORT}`; }
 function generateNewID() {
     let newID = "";
 
-    while (newID == "" || services.find((x) => { if (x) { x.serverID == newID; } })) {
+    while (newID == "" || services.find((x) => { if (x) { x.serviceID == newID; } })) {
         newID = uuid.v4().substring(1, 5);
     }
 
