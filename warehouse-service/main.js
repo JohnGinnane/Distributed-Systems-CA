@@ -161,8 +161,13 @@ function addToLocation(call, callback) {
 function removeFromLocation(call, callback) {
     // Client side streaming
     try {
-        call.on("data", (AddToLocationRequest) => {
-            const locationNameOrID = AddToLocationRequest.locationNameOrID;
+        call.on("data", (RemoveFromLocationRequest) => {
+            console.log("Incoming item:");
+            console.log(RemoveFromLocationRequest);
+
+            const locationNameOrID = RemoveFromLocationRequest.locationNameOrID;
+            const itemName = RemoveFromLocationRequest.itemName;
+
             let loc = getLocationByNameOrID(locationNameOrID);
         
             // Make sure we found a location
@@ -175,7 +180,7 @@ function removeFromLocation(call, callback) {
                 return;
             }
 
-            remove(loc.ID, AddToLocationRequest.itemName);
+            remove(loc.ID, itemName);
         })
     } catch (ex) {
         // Catch exception and handle
@@ -184,6 +189,11 @@ function removeFromLocation(call, callback) {
             details: ex
         });
     }
+
+    call.on("end", () => {
+        callback(null, {});
+        // Code for when the client has finished streaming in items
+    });
 }
 
 function listRobots(call, callback) {

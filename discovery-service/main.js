@@ -122,7 +122,7 @@ const unregisterService = (call, callback) => {
     // Make sure service exists
     let serviceIndex = services.findIndex((x) => x.serviceID == serviceID);
 
-    // Remove from services array`
+    // Remove from services array
     if (serviceIndex > -1) {
         console.log(`Service ID ${services[serviceIndex].serviceID} has been unregistered`);
         services.splice(serviceIndex, 1);

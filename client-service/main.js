@@ -128,10 +128,10 @@ function addItem(locationNameOrID, itemName) {
     }
 
     // If item name was already specified then just add it and exit
-        if (!itemName) {
-        let moreOrders = true;
+    if (!itemName) {
+        var keepAdding = true;
 
-        while (moreOrders) {
+        while (keepAdding) {
             const itemName = readlineSync.question("Enter item name: ");
 
             if (!itemName) {
@@ -142,10 +142,11 @@ function addItem(locationNameOrID, itemName) {
                     itemName: itemName
                 });
 
-                moreOrders = readlineSync.keyInYN("Do you want to add more items? ");
+                keepAdding = readlineSync.keyInYN("Do you want to add more items? ");
             }
         }
     } else {
+        // Command line set the item name
         call.write({
             locationNameOrID: locationNameOrID,
             itemName: itemName
@@ -155,30 +156,45 @@ function addItem(locationNameOrID, itemName) {
     call.end();
 }
 
-function removeItem() {
-    // Need to ask for location ID or name
-    const locationNameOrID = readlineSync.question("What location do you want to remove items from? ");
-
-    while (true) {
-        const itemName = readlineSync.question("Item name? ");
-
-        if (!itemName) {
-            console.log("Please enter a valid item name!");
-            continue;
+function removeItem(locationNameOrID, itemName) {
+    const call = warehouseService.RemoveFromLocation((error, response) => {
+        if (error) {
+            console.log("An error occurred trying to remove items: ");
+            console.error(error);
         }
+    });
     
-        warehouseService.RemoveLoadingBay({itemName: itemName}, (error, response) => {
-            if (error) {
-                console.log(`An error occurred trying to remove the item '${itemName}'`);
-                console.error(error);
-                return;
-            }
-
-            console.log(`Successfully removed ${itemName}`);
-        })
-
-        break;
+    // Need to ask for location ID or name
+    if (!locationNameOrID) {
+        locationNameOrID = readlineSync.question("What location do you want to remove items from? ");
     }
+
+    var keepDeleting = true;
+
+    if (!itemName) {
+        while (keepDeleting) {
+            const itemName = readlineSync.question("Enter item name: ");
+
+            if (!itemName) {
+                console.log("Please enter a valid item name!");
+            } else {
+                call.write({
+                    locationNameOrID: locationNameOrID,
+                    itemName: itemName
+                });
+
+                keepDeleting = readlineSync.keyInYN("Do you want to delete more items? ");
+            }
+        }
+    } else {
+        // Command line set the item name
+        call.write({
+            locationNameOrID: locationNameOrID,
+            itemName: itemName
+        });
+    }
+
+    call.end();
 }
 
 // Sanitise all user inputs
@@ -205,26 +221,32 @@ switch (userInput) {
     case "3":
         // Try to get the location from the arguments if possible
         var listLocation = "";
-        if (process.argv[3]) {
-            listLocation = process.argv[3].toString().trim();
-        }
+
+        if (process.argv[3]) { listLocation = process.argv[3].toString().trim(); }
 
         listLocationItems(listLocation);
         break;
 
     case "4":
         // Try to get the location from the arguments if possible
-        var listLocation = "";
-        var newItem      = "";
+        var location = "";
+        var newItem  = "";
 
-        if (process.argv[3]) { listLocation = process.argv[3].toString().trim(); }
-        if (process.argv[4]) { newItem      = process.argv[4].toString().trim(); }
+        if (process.argv[3]) { location = process.argv[3].toString().trim(); }
+        if (process.argv[4]) { newItem  = process.argv[4].toString().trim(); }
 
-        addItem(listLocation, newItem);
+        addItem(location, newItem);
         break;
 
     case "5":
-        removeItem();
+        // Try to get the location from the arguments if possible
+        var location   = "";
+        var targetItem = "";
+
+        if (process.argv[3]) { location   = process.argv[3].toString().trim(); }
+        if (process.argv[4]) { targetItem = process.argv[4].toString().trim(); }
+
+        removeItem(location, targetItem);
         break;
 
     default:
