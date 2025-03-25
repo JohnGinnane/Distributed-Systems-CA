@@ -126,7 +126,7 @@ function addToLocation(call, callback) {
         call.on("data", (AddToLocationRequest) => {
             console.log("Incoming item:");
             console.log(AddToLocationRequest);
-            
+
             const locationNameOrID = AddToLocationRequest.locationNameOrID;
             const itemName = AddToLocationRequest.itemName;
 
@@ -151,6 +151,11 @@ function addToLocation(call, callback) {
             details: ex
         });
     }
+
+    call.on("end", () => {
+        callback(null, {});
+        // Code for when the client has finished streaming in items
+    });
 }
 
 function removeFromLocation(call, callback) {

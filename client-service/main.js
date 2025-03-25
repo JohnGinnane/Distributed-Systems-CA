@@ -114,37 +114,43 @@ function listLocationItems(locationNameOrID) {
     });
 }
 
-function addItem() {
+function addItem(locationNameOrID, itemName) {
     const call = warehouseService.AddToLocation((error, response) => {
         if (error) {
             console.log("An error occurred trying to add items: ");
             console.error(error);
-        } else {
-            console.log(response.message);
         }
     });
     
     // Need to ask for location ID or name
-    const locationNameOrID = readlineSync.question("What location do you want to add items to? ");
-
-    let moreOrders = true;
-
-    while (moreOrders) {
-        const itemName = readlineSync.question("Enter item name: ");
-
-        if (!itemName) {
-            console.log("Please enter a valid item name!");
-        } else {
-            call.write({
-                locationNameOrID: locationNameOrID,
-                itemName: itemName
-            });
-
-            moreOrders = readlineSync.keyInYN("Do you want to add more items? ");
-        }
+    if (!locationNameOrID) {
+        locationNameOrID = readlineSync.question("What location do you want to add items to? ");
     }
 
-    console.log("test");
+    // If item name was already specified then just add it and exit
+        if (!itemName) {
+        let moreOrders = true;
+
+        while (moreOrders) {
+            const itemName = readlineSync.question("Enter item name: ");
+
+            if (!itemName) {
+                console.log("Please enter a valid item name!");
+            } else {
+                call.write({
+                    locationNameOrID: locationNameOrID,
+                    itemName: itemName
+                });
+
+                moreOrders = readlineSync.keyInYN("Do you want to add more items? ");
+            }
+        }
+    } else {
+        call.write({
+            locationNameOrID: locationNameOrID,
+            itemName: itemName
+        });
+    }
 
     call.end();
 }
@@ -198,13 +204,23 @@ switch (userInput) {
 
     case "3":
         // Try to get the location from the arguments if possible
-        const listLocation = process.argv[3].toString().trim();
+        var listLocation = "";
+        if (process.argv[3]) {
+            listLocation = process.argv[3].toString().trim();
+        }
 
         listLocationItems(listLocation);
         break;
 
     case "4":
-        addItem();
+        // Try to get the location from the arguments if possible
+        var listLocation = "";
+        var newItem      = "";
+
+        if (process.argv[3]) { listLocation = process.argv[3].toString().trim(); }
+        if (process.argv[4]) { newItem      = process.argv[4].toString().trim(); }
+
+        addItem(listLocation, newItem);
         break;
 
     case "5":
