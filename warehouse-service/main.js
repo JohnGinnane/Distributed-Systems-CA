@@ -17,7 +17,7 @@ const MAX_SHELF_SIZE  = 20;
 function generateNewID() {
     let newID = "";
 
-    while (newID == "" || locations.find((x) => { if (x) { x.ID == newID; } })) {
+    while (newID == "" || locations.find(x => x.ID == newID)) {
         newID = uuid.v4().substring(1, 5);
     }
 
@@ -25,10 +25,11 @@ function generateNewID() {
 }
 
 function getLocationByNameOrID(nameOrID) {
-    return locations.find((x) => { x.Name == nameOrID || x.ID == nameOrID});
+    return locations.find(x => x.Name == nameOrID || x.ID == nameOrID);
 }
 
-function add(itemName, locationNameOrID) {
+// Private functions to add and remove to/from storage
+function add(locationNameOrID, itemName) {
     if (!itemName) { return; }
     let loc = getLocationByNameOrID(locationNameOrID);
 
@@ -43,14 +44,14 @@ function add(itemName, locationNameOrID) {
     loc.Items.push(itemName);
 }
 
-function remove(itemName, locationNameOrID) {
+function remove(locationNameOrID, itemName) {
     if (!itemName) { return; }
     let loc = getLocationByNameOrID(locationNameOrID);
 
     // Couldn't find location
     if (!loc) { return; }
 
-    let itemIndex = loc.Items.findIndex((x) => { x == itemName; });
+    let itemIndex = loc.Items.findIndex(x => x == itemName);
 
     // If that item was found in that location
     if (itemIndex > -1) {
@@ -75,7 +76,6 @@ locations.push({
 });
 
 // Sample data
-add("loading_bay", "iPod");
 add("loading_bay", "iPod");
 add("loading_bay", "Calculator");
 add("loading_bay", "Mobile Phone");
@@ -124,7 +124,12 @@ function addToLocation(call, callback) {
     // Client side streaming
     try {
         call.on("data", (AddToLocationRequest) => {
+            console.log("Incoming item:");
+            console.log(AddToLocationRequest);
+            
             const locationNameOrID = AddToLocationRequest.locationNameOrID;
+            const itemName = AddToLocationRequest.itemName;
+
             let loc = getLocationByNameOrID(locationNameOrID);
         
             // Make sure we found a location
@@ -137,7 +142,7 @@ function addToLocation(call, callback) {
                 return;
             }
 
-            add(AddToLocationRequest.itemName, loc.ID);
+            add(loc.ID, itemName);
         })
     } catch (ex) {
         // Catch exception and handle
@@ -165,7 +170,7 @@ function removeFromLocation(call, callback) {
                 return;
             }
 
-            remove(AddToLocationRequest.itemName, loc.ID);
+            remove(loc.ID, AddToLocationRequest.itemName);
         })
     } catch (ex) {
         // Catch exception and handle

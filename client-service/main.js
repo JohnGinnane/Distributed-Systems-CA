@@ -69,10 +69,13 @@ function listLocations() {
     });
 }
 
-function listLocationItems() {
+function listLocationItems(locationNameOrID) {
     // Need to ask for location ID or name
-    const locationNameOrID = readlineSync.question("What location do you want to list the items for? ");
+    if (!locationNameOrID) {
+        locationNameOrID = readlineSync.question("What location do you want to list the items for? ");
+    }
 
+    // Check if location exists
     let listLocationItems = warehouseService.ListLocationItems({
         locationNameOrID: locationNameOrID
     });
@@ -87,8 +90,7 @@ function listLocationItems() {
 
     // Once the server has finished streaming the data
     // then format the list so it's nice and consistent
-    listLocationItems.on("end", ()=>{
-        console.log("\nItems in the loading bay:");
+    listLocationItems.on("end", () => {
         const numPadding = items.length.toString().length - 1;
         let maxLength = 1;
 
@@ -98,6 +100,7 @@ function listLocationItems() {
             if (lineStr.length > maxLength) {
                 maxLength = lineStr.length;
             }
+
             console.log(lineStr);
         }
 
@@ -106,20 +109,23 @@ function listLocationItems() {
     });
 
     listLocationItems.on("error", (e) => {
-        console.log("Error listing loading bay items:");
+        console.log("Error listing items:");
         console.error(e);
     });
 }
 
-function insertLoadingBay() {
-    const call = warehouseService.InsertLoadingBay((error, response) => {
+function addItem() {
+    const call = warehouseService.AddToLocation((error, response) => {
         if (error) {
-            console.log("An error occurred trying to insert loading bay items: ");
+            console.log("An error occurred trying to add items: ");
             console.error(error);
         } else {
             console.log(response.message);
         }
     });
+    
+    // Need to ask for location ID or name
+    const locationNameOrID = readlineSync.question("What location do you want to add items to? ");
 
     let moreOrders = true;
 
@@ -129,18 +135,26 @@ function insertLoadingBay() {
         if (!itemName) {
             console.log("Please enter a valid item name!");
         } else {
-            call.write({itemName: itemName});
+            call.write({
+                locationNameOrID: locationNameOrID,
+                itemName: itemName
+            });
 
-            moreOrders = readlineSync.keyInYN("Do you want to add more to the order? ");
+            moreOrders = readlineSync.keyInYN("Do you want to add more items? ");
         }
     }
+
+    console.log("test");
 
     call.end();
 }
 
-function removeLoadingBay() {
+function removeItem() {
+    // Need to ask for location ID or name
+    const locationNameOrID = readlineSync.question("What location do you want to remove items from? ");
+
     while (true) {
-        const itemName = readlineSync.question("What item do you want to remove from the loading bay? ");
+        const itemName = readlineSync.question("Item name? ");
 
         if (!itemName) {
             console.log("Please enter a valid item name!");
@@ -154,7 +168,7 @@ function removeLoadingBay() {
                 return;
             }
 
-            console.log(`Successfully removed ${itemName} from the loading bay`);
+            console.log(`Successfully removed ${itemName}`);
         })
 
         break;
@@ -167,8 +181,8 @@ if (!userInput) {
     console.log("1. List robots");
     console.log("2. List locations");
     console.log("3. List location items");
-    console.log("4. Insert loading bay items");
-    console.log("5. Remove loading bay item");
+    console.log("4. Insert items");
+    console.log("5. Remove item");
     
     userInput = readlineSync.questionInt("\nEnter Option: ").toString().trim().toLowerCase();
 }
@@ -183,15 +197,18 @@ switch (userInput) {
         break;
 
     case "3":
-        listLocationItems();
+        // Try to get the location from the arguments if possible
+        const listLocation = process.argv[3].toString().trim();
+
+        listLocationItems(listLocation);
         break;
 
     case "4":
-        insertLoadingBay();
+        addItem();
         break;
 
     case "5":
-        removeLoadingBay();
+        removeItem();
         break;
 
     default:
