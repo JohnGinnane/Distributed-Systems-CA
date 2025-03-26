@@ -55,7 +55,7 @@ function remove(locationNameOrID, itemName) {
 
     // If that item was found in that location
     if (itemIndex > -1) {
-        loc.Items.split(itemIndex, 1);
+        loc.Items.splice(itemIndex, 1);
     }
 }
 
@@ -122,11 +122,8 @@ function listLocationItems(call, callback) {
 
 function addToLocation(call, callback) {
     // Client side streaming
-    try {
-        call.on("data", (AddToLocationRequest) => {
-            console.log("Incoming item:");
-            console.log(AddToLocationRequest);
-
+    call.on("data", (AddToLocationRequest) => {
+        try {
             const locationNameOrID = AddToLocationRequest.locationNameOrID;
             const itemName = AddToLocationRequest.itemName;
 
@@ -143,14 +140,17 @@ function addToLocation(call, callback) {
             }
 
             add(loc.ID, itemName);
-        })
-    } catch (ex) {
-        // Catch exception and handle
-        callback({
-            status: grpc.status.INTERNAL,
-            details: ex
-        });
-    }
+        } catch (ex) {
+            console.log("A non-fatal error occurred trying to add an item: ");
+            console.error(ex);
+    
+            // Catch exception and handle
+            callback({
+                status: grpc.status.INTERNAL,
+                details: ex
+            });
+        }
+    });
 
     call.on("end", () => {
         callback(null, {});
@@ -160,11 +160,8 @@ function addToLocation(call, callback) {
 
 function removeFromLocation(call, callback) {
     // Client side streaming
-    try {
-        call.on("data", (RemoveFromLocationRequest) => {
-            console.log("Incoming item:");
-            console.log(RemoveFromLocationRequest);
-
+    call.on("data", (RemoveFromLocationRequest) => {
+        try {
             const locationNameOrID = RemoveFromLocationRequest.locationNameOrID;
             const itemName = RemoveFromLocationRequest.itemName;
 
@@ -181,14 +178,17 @@ function removeFromLocation(call, callback) {
             }
 
             remove(loc.ID, itemName);
-        })
-    } catch (ex) {
-        // Catch exception and handle
-        callback({
-            status: grpc.status.INTERNAL,
-            details: ex
-        });
-    }
+        } catch (ex) {
+            console.log("A non-fatal error occurred trying to remove an item: ");
+            console.error(ex);
+    
+            // Catch exception and handle
+            callback({
+                status: grpc.status.INTERNAL,
+                details: ex
+            });
+        }
+    })
 
     call.on("end", () => {
         callback(null, {});
