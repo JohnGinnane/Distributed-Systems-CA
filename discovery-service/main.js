@@ -26,9 +26,30 @@ function generateNewID() {
     return newID;
 }
 
+function findService(call, callback) {
+    let serviceNameOrID = call.request.serviceNameOrID;
+
+    let service = services.find((x) => x.serviceName == serviceNameOrID || x.serviceID == serviceNameOrID);
+
+    if (!service) {
+        callback({
+            status: grpc.status.NOT_FOUND,
+            details: `Unable to find service with name or ID '${serviceNameOrID}'`
+        });
+    }
+    
+    callback(null, {
+        serviceID:      service.serviceID,
+        serviceName:    service.serviceName,
+        serviceAddress: service.serviceAddress
+    });
+}
+
 function listServices(call, callback) {
+    console.log("Listing services:");
     for (var i = 0; i < services.length; i++) {
         var service = services[i];
+        console.log(service);
 
         call.write({
             serviceID:      service.serviceID,
@@ -135,6 +156,7 @@ server.addService(discoveryProto.DiscoveryService.service, {
     RegisterService:   registerService,
     UnregisterService: unregisterService,
     ListServices:      listServices,
+    FindService:       findService,
     GetFreePort:       getFreePort,
 });
 

@@ -1,15 +1,18 @@
+import "google/protobuf/empty.proto";
+
 syntax = "proto3";
 
 package discovery;
 
 service DiscoveryService {
     // Unary gRPC functions to register a service with the discovery service
-    rpc RegisterService   (RegisterRequest)   returns (RegisterResponse);
-    rpc UnregisterService (UnregisterRequest) returns (UnregisterResponse);
-    rpc GetFreePort       (PortRequest)       returns (PortResponse);
+    rpc RegisterService   (RegisterRequest)       returns (RegisterResponse);
+    rpc UnregisterService (UnregisterRequest)     returns (UnregisterResponse);
+    rpc GetFreePort       (PortRequest)           returns (PortResponse);
+    rpc FindService       (ServiceRequest)        returns (ServiceResponse);
 
     // Serverside Stream gRPC function to list all services
-    rpc ListServices      (ServiceRequest)    returns (stream ServiceResponse);
+    rpc ListServices      (google.protobuf.Empty) returns (stream ServiceResponse);
 }
 
 message RegisterRequest {
@@ -28,7 +31,9 @@ message UnregisterRequest {
 
 message UnregisterResponse { }
 
-message ServiceRequest { }
+message ServiceRequest {
+    string serviceNameOrID = 1;
+}
 
 message ServiceResponse {
     string serviceID      = 1;
