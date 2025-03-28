@@ -65,8 +65,7 @@ discoveryService.FindService({
         console.error("No response from discovery service when finding warehouse!");
         return;
     }
-
-    console.log(response);
+    
     warehouseAddress = response.serviceAddress;
     console.log("Found warehouse service @ ", warehouseAddress);
     

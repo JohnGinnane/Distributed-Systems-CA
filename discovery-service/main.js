@@ -46,10 +46,8 @@ function findService(call, callback) {
 }
 
 function listServices(call, callback) {
-    console.log("Listing services:");
     for (var i = 0; i < services.length; i++) {
         var service = services[i];
-        console.log(service);
 
         call.write({
             serviceID:      service.serviceID,
