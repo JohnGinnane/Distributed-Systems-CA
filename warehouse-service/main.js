@@ -199,7 +199,7 @@ function addRobot(call, callback) {
     // Robot already logged in
     if (robots.find((x) => x.serviceID == robot.serviceID)) {
         callback({
-            status: grpc.status.ALREADY_EXISTS,
+            code:    grpc.status.ALREADY_EXISTS,
             details: `Couldn't find robot ${reportStatusRequest.serviceID}!`
         });
         
@@ -224,7 +224,7 @@ function addRobot(call, callback) {
         console.log("Error trying to add robot:");
         console.error(ex);
         callback({
-            status: grpc.status.INTERNAL,
+            code:    grpc.status.INTERNAL,
             details: "Exception thrown when adding robot"
         });
     }
@@ -237,7 +237,7 @@ function removeRobot(call, callback) {
     // Unable to find robot
     if (robotIndex < 0) {
         callback({
-            status: grpc.status.NOT_FOUND,
+            code:    grpc.status.NOT_FOUND,
             details: `Couldn't find robot ${reportStatusRequest.serviceID}!`
         });
         
@@ -256,7 +256,7 @@ function setRobotStatus(call, callback) {
     // Unable to find robot
     if (robotIndex < 0) {
         callback({
-            status: grpc.status.NOT_FOUND,
+            code:    grpc.status.NOT_FOUND,
             details: `Couldn't find robot ${reportStatusRequest.serviceID}!`
         });
 
@@ -284,7 +284,7 @@ function removeFromLocation(call, callback) {
             // Make sure we found a location
             if (!loc) {
                 callback({
-                    status: grpc.status.NOT_FOUND,
+                    code:    grpc.status.NOT_FOUND,
                     details: `No location found for '${locationNameOrID}'`
                 })
         
@@ -298,7 +298,7 @@ function removeFromLocation(call, callback) {
     
             // Catch exception and handle
             callback({
-                status: grpc.status.INTERNAL,
+                code:    grpc.status.INTERNAL,
                 details: ex
             });
         }
@@ -330,7 +330,7 @@ function listRobots(call, callback) {
         console.print("An error occurred listing robots: ");
         console.error(ex);
         callback({
-            code: grpc.status.INTERNAL,
+            code:    grpc.status.INTERNAL,
             details: "An error occurred listing robots"
         });
     }
