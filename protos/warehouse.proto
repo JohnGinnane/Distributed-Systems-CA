@@ -15,7 +15,7 @@ service WarehouseService {
     rpc RemoveFromLocation  (stream RemoveFromLocationRequest) returns (google.protobuf.Empty);
 
     // Server side stream functions
-    rpc ListRobots          (google.protobuf.Empty)            returns (stream RobotResponse);
+    rpc ListRobots          (google.protobuf.Empty)            returns (stream ReportStatusRequest);
     rpc ListLocations       (google.protobuf.Empty)            returns (stream LocationResponse);
     rpc ListLocationItems   (ListLocationItemsRequest)         returns (stream ItemResponse);
 }

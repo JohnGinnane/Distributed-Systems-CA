@@ -278,37 +278,29 @@ function removeFromLocation(call, callback) {
 }
 
 function listRobots(call, callback) {
-    // Call the discovery service's function
-    // and stream on the robot services
-    var listServicesCall = discoveryService.listServices({});
+    try {
+        for (let i = 0; i < robots.length; i++) {
+            let robot = robots[i];
 
-    listServicesCall.on("data", function (response) {
-        if (!response) { return; }
+            if (!robot) { continue; }
 
-        if (response.serviceName.trim().toLowerCase() == "robot") {
             call.write({
-                serviceID:      response.serviceID,
-                serviceName:    response.serviceName,
-                serviceAddress: response.serviceAddress
+                serviceID: robot.serviceID,
+                address:   robot.address,
+                status:    robot.status,
+                location:  robot.location
             });
         }
-    });
 
-    listServicesCall.on("end", () => {
-        // When listing services function has finished streaming
-        // then end this function's stream
         call.end();
-    });
-
-    listServicesCall.on("error", function (e) {
-        console.log("Error listing robots:");
-        console.error(e);
-
+    } catch (ex) {
+        console.print("An error occurred listing robots: ");
+        console.error(ex);
         callback({
             code: grpc.status.INTERNAL,
-            details: e
+            details: "An error occurred listing robots"
         });
-    });
+    }
 }
 
 function listLocations(call, callback) {

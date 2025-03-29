@@ -24,12 +24,13 @@ if (process.argv[2]) {
 }
 
 function listRobots() {
-    var listRobotsCall = warehouseService.ListRobots({});
-
+    let listRobotsCall = warehouseService.ListRobots({});
+    let count = 0;
     listRobotsCall.on("data", function (response) {
         if (!response) { return; }
+        count++;
 
-        console.log(`${response.serviceID} @ ${response.serviceAddress}`);
+        console.log(`${count}\t${response.serviceID}\t${response.address}\t${response.location}\t${response.status}`);
     });
 
     listRobotsCall.on("end", ()=>{});
