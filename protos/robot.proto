@@ -8,7 +8,7 @@ service RobotService {
     // Unary functions
     rpc LoadItem     (ItemRequest)           returns (google.protobuf.Empty);
     rpc UnloadItem   (google.protobuf.Empty) returns (google.protobuf.Empty);
-    rpc GoToLocation (LocationRequest)       returns (google.protobuf.Empty);
+    rpc GoToLocation (LocationRequest)       returns (LocationResponse);
 }
 
 message ItemRequest {
@@ -18,4 +18,8 @@ message ItemRequest {
 message LocationRequest {
     // Allow searching by either human friendly name or UUID
     string locationNameOrID = 1; 
+}
+
+message LocationResponse {
+    string locationNameOrID = 1;
 }

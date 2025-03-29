@@ -21,8 +21,22 @@ function address() { return `${ADDRESS}:${PORT}`; }
 const robotService     = new robotProto.RobotService(address(), grpc.credentials.createInsecure());
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 let warehouseAddress   = ""; // Filled in later with a call to discovery service
+let warehouseService   = null;
 
 // FUNCTIONS //
+function updateStatus() {
+    try {
+        warehouseService.SetRobotStatus({
+            serviceID: serviceID,
+            address:   address(),
+            status:    status,
+            location:  location
+        }, ()=>{});
+    } catch (ex) {
+        console.log("An error occurred updating robot status: ");
+        console.error(ex);
+    }
+}
 function loadItem(call, callback) {
     // Robot must be placed at location that
     // contains the item we want to load
@@ -30,22 +44,35 @@ function loadItem(call, callback) {
     const location = self.location;
     
     // Trying to remove item from location
+    heldItem = itemName;
+    updateStatus()
 }
 
 function unloadItem(call, callback) {
     // Will drop the held item at location
+    heldItem = "";
+    updateStatus();
 }
 
 function goToLocation(call, callback) {
     // Goes to location
-    const newLocation = call.request.itemName;
+    const locationNameOrID = call.request.locationNameOrID;
+    console.log(`Going to ${locationNameOrID}`);
 
-    position = newLocation;
+    if (this.location == locationNameOrID) {
+        // Immediately report back that we're at location
+        callback(null, {locationNameOrID: location});
+        updateStatus();
+        return;
+    }
 
-    // Wait 1000ms before reporting that we're at the location
+    // Otherwise wait 1000ms before reporting that we're at the location
+    // to simulate moving the robot
     setTimeout(() => {
-        callback(null, {});
-        this.position = "";
+        location = locationNameOrID;
+        console.log(`Arrived at ${location}`);
+        callback(null, {locationNameOrID: location});
+        updateStatus();
     }, 1000);
 }
 
@@ -65,12 +92,13 @@ discoveryService.FindService({
         console.error("No response from discovery service when finding warehouse!");
         return;
     }
-    
+
     warehouseAddress = response.serviceAddress;
-    console.log("Found warehouse service @ ", warehouseAddress);
-    
+    console.log("Found warehouse service @", warehouseAddress);
+
     // Now that we have the warehouse let's set up the rest of the robot
-    const warehouseService = new warehouseProto.WarehouseService(warehouseAddress, grpc.credentials.createInsecure());
+    warehouseService = new warehouseProto.WarehouseService(warehouseAddress, grpc.credentials.createInsecure());
+    console.log("hello!");
 
     // Find a free port for this service
     discoveryService.GetFreePort({
@@ -101,7 +129,7 @@ discoveryService.FindService({
             // Create service after registering with discovery service
             server = new grpc.Server();
 
-            server.addService(discoveryProto.DiscoveryService.service, {
+            server.addService(robotProto.RobotService.service, {
                 LoadItem:     loadItem,
                 UnloadItem:   unloadItem,
                 GoToLocation: goToLocation
@@ -110,22 +138,35 @@ discoveryService.FindService({
             server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
                 console.log("Robot Service running on " + address());
                 //server.start(); // No longer necessary to call this function, according to node
+                
+                // Robot should tell the warehouse its online
+                warehouseService.AddRobot({
+                    serviceID: serviceID,
+                    address:   address(),
+                    status:    status,
+                    location:  location
+                }, ()=>{});
             });
         });
     });
 });
 
 function exitHandler() {
-    // Attempt to unregister the service
-    if (serviceID && discoveryService) {
-        discoveryService.unregisterService({serviceID: serviceID}, (error, response) => {
-            if (error) {
-                // Not sure we're worried about errors unregistering at this stage
-            } else {
-                // Neither are we interested in the response to unregistering as we exit
-            }
-        });
+    // Tell the warehouse we're going offline
+    try {
+        if (serviceID && warehouseService) {
+            warehouseService.RemoveRobot({serviceID: serviceID}, ()=>{});
+        }
+    } catch (ex) {
+        // Don't care about exceptions at this stage
     }
+
+    // Attempt to unregister the service
+    try {
+        if (serviceID && discoveryService) {
+            discoveryService.UnregisterService({serviceID: serviceID}, ()=>{});
+        }
+    } catch (ex) { }
 
     // Stop the server, to free up the port
     if (server) {

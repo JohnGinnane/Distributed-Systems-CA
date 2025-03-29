@@ -5,6 +5,7 @@ const uuid = require("uuid");
 
 const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/discovery.proto"))).discovery;
 const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
+const robotProto     = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/robot.proto"))).robot;
 
 let DISCOVERY_ADDRESS = "127.0.0.1:50000";
 let ADDRESS           = "127.0.0.1";
@@ -13,6 +14,7 @@ let serviceID         = "";
 let server            = null;
 let locations         = [];
 const MAX_SHELF_SIZE  = 20;
+let robots            = [];
 
 function generateNewID() {
     let newID = "";
@@ -158,6 +160,85 @@ function addToLocation(call, callback) {
     });
 }
 
+function addRobot(call, callback) {
+    const robot = call.request;
+
+    // Robot already logged in
+    if (robots.find((x) => x.serviceID == robot.serviceID)) {
+        callback({
+            status: grpc.status.ALREADY_EXISTS,
+            details: `Couldn't find robot ${reportStatusRequest.serviceID}!`
+        });
+        
+        return;
+    }
+
+    try {
+        robot.Service = new robotProto.RobotService(robot.address, grpc.credentials.createInsecure());
+        console.log(`Robot ${robot.serviceID} has just come online`);
+        robots.push(robot);
+
+        // Move the robot to loading bay
+        robot.Service.GoToLocation({
+            locationNameOrID: "loading_bay"
+        }, (error, response) => {
+            if (error) {
+                console.log("Error moving robot to loading_bay");
+                console.error(error);
+            }
+        });
+    } catch (ex) {
+        console.log("Error trying to add robot:");
+        console.error(ex);
+        callback({
+            status: grpc.status.INTERNAL,
+            details: "Exception thrown when adding robot"
+        });
+    }
+}
+
+function removeRobot(call, callback) {
+    const reportStatusRequest = call.request;
+    const robotIndex = robots.findIndex((x) => x.serviceID == reportStatusRequest.serviceID);
+
+    // Unable to find robot
+    if (robotIndex < 0) {
+        callback({
+            status: grpc.status.NOT_FOUND,
+            details: `Couldn't find robot ${reportStatusRequest.serviceID}!`
+        });
+        
+        return;
+    }
+
+    const robot = robots[robotIndex];
+    console.log(`Robot ${robot.serviceID} went offline. It was last seen at ${robot.location}`);
+    robots.splice(robotIndex, 1);
+}
+
+function SetRobotStatus(call, callback) {
+    const reportStatusRequest = call.request;
+    const robotIndex = robots.findIndex((x) => x.serviceID == reportStatusRequest.serviceID)
+
+    // Unable to find robot
+    if (robotIndex < 0) {
+        callback({
+            status: grpc.status.NOT_FOUND,
+            details: `Couldn't find robot ${reportStatusRequest.serviceID}!`
+        });
+
+        return;
+    }
+
+    // Report any changes to location
+    if (robots[robotIndex].location != reportStatusRequest.location) {
+        console.log(`Robot ${robots[robotIndex].serviceID} is now at ${reportStatusRequest.location}`);
+    }
+
+    robots[robotIndex].status = reportStatusRequest.status;
+    robots[robotIndex].location = reportStatusRequest.location;
+}
+
 function removeFromLocation(call, callback) {
     // Client side streaming
     call.on("data", (RemoveFromLocationRequest) => {
@@ -261,6 +342,9 @@ discoveryService.registerService({
         server.addService(warehouseProto.WarehouseService.service, {
             AddToLocation:       addToLocation,
             RemoveFromLocation:  removeFromLocation,
+            AddRobot:            addRobot,
+            RemoveRobot:         removeRobot,
+            SetRobotStatus:      SetRobotStatus,
 
             ListRobots:          listRobots,
             ListLocations:       listLocations,
@@ -270,6 +354,30 @@ discoveryService.registerService({
         server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
             console.log("Warehouse Service running on " + address());
             //server.start(); // No longer necessary to call this function, according to node
+
+            // At this stage we should go over all robots and add them to the list
+            // Call the discovery service's function
+            var listServicesCall = discoveryService.listServices({});
+
+            listServicesCall.on("data", function (response) {
+                if (!response) { return; }
+
+                if (response.serviceName.trim().toLowerCase() == "robot") {
+                    addRobot({
+                        request: {
+                            serviceID: response.serviceID,
+                            address:   response.serviceAddress
+                        }
+                    }, null);
+                }
+            });
+
+            listServicesCall.on("end", () => { });
+
+            listServicesCall.on("error", function (e) {
+                console.log("Error identifying robot services:");
+                console.error(e);
+            });
         })
         
     }

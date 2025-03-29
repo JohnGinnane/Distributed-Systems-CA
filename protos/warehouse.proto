@@ -6,9 +6,9 @@ package warehouse;
 
 service WarehouseService {
     // Unary functions
-    rpc LoadItem            (LoadItemRequest)                  returns (LoadItemResponse);
-    rpc UnloadItem          (UnloadItemRequest)                returns (UnloadItemResponse);
+    rpc AddRobot            (ReportStatusRequest)              returns (google.protobuf.Empty);
     rpc SetRobotStatus      (ReportStatusRequest)              returns (google.protobuf.Empty);
+    rpc RemoveRobot         (RemoveRobotRequest)               returns (google.protobuf.Empty);
 
     // Client side stream functions
     rpc AddToLocation       (stream AddToLocationRequest)      returns (google.protobuf.Empty);
@@ -20,24 +20,15 @@ service WarehouseService {
     rpc ListLocationItems   (ListLocationItemsRequest)         returns (stream ItemResponse);
 }
 
-message LoadItemRequest {
-    string locationID = 1;
-    string itemName   = 2;
-}
-
-message LoadItemResponse { }
-
-message UnloadItemRequest {
-    string locationID = 1;
-    string itemName   = 2;
-}
-
-message UnloadItemResponse { }
-
 message ReportStatusRequest {
     string serviceID = 1;
-    string status    = 2;
-    string location  = 3;
+    string address   = 2;
+    string status    = 3;
+    string location  = 4;
+}
+
+message RemoveRobotRequest {
+    string serviceID = 1;
 }
 
 message AddToLocationRequest {
