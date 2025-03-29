@@ -198,6 +198,27 @@ function removeItem(locationNameOrID, itemName) {
     call.end();
 }
 
+function moveRobot(serviceID, locationNameOrID) {
+    if (!serviceID) {
+        serviceID = readlineSync.question("Enter robot service ID: ");
+    }
+
+    if (!locationNameOrID) {
+        locationNameOrID = readlineSync.question("What location do you want to send the robot to? ");
+    }
+
+    warehouseService.MoveRobot({
+        serviceID: serviceID,
+        locationNameOrID: locationNameOrID
+    }, (error, response) => {
+        if (error) {
+            console.log(`An error occurred moving a robot to ${locationNameOrID}`);
+            console.error(error);
+            return;
+        }
+    });
+}
+
 // Sanitise all user inputs
 if (!userInput) {
     console.log("0. to quit");
@@ -206,6 +227,7 @@ if (!userInput) {
     console.log("3. List location items");
     console.log("4. Insert items");
     console.log("5. Remove item");
+    console.log("6. Move robot");
     
     userInput = readlineSync.questionInt("\nEnter Option: ").toString().trim().toLowerCase();
 }
@@ -248,6 +270,16 @@ switch (userInput) {
         if (process.argv[4]) { targetItem = process.argv[4].toString().trim(); }
 
         removeItem(location, targetItem);
+        break;
+
+    case "6":
+        let serviceID        = "";
+        let locationNameOrID = "";
+
+        if (process.argv[3]) { serviceID        = process.argv[3].toString().trim(); }
+        if (process.argv[4]) { locationNameOrID = process.argv[4].toString().trim(); }
+
+        moveRobot(serviceID, locationNameOrID);
         break;
 
     default:

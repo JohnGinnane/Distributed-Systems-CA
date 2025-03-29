@@ -99,7 +99,7 @@ function listLocationItems(call, callback) {
     // Make sure we found a location
     if (!loc) {
         callback({
-            status: grpc.status.NOT_FOUND,
+            code:    grpc.status.NOT_FOUND,
             details: `No location found for '${locationNameOrID}'`
         })
 
@@ -116,8 +116,8 @@ function listLocationItems(call, callback) {
     } catch (ex) {
         // Catch exception and handle
         callback({
-            status: grpc.status.INTERNAL,
-            details: ex
+            code:    grpc.status.INTERNAL,
+            details: "Exception occurred trying to list location items"
         });
     }
 }
@@ -157,6 +157,39 @@ function addToLocation(call, callback) {
     call.on("end", () => {
         callback(null, {});
         // Code for when the client has finished streaming in items
+    });
+}
+
+function moveRobot(call, callback) {
+    const moveRobotRequest = call.request;
+    const robot = robots.find((x) => x.serviceID == moveRobotRequest.serviceID);
+
+    // Unable to find robot
+    if (!robot) {
+        callback({
+            code:    grpc.status.NOT_FOUND,
+            details: `Couldn't find robot ${moveRobotRequest.serviceID}!`
+        });
+        
+        return;
+    }
+
+    robot.Service.GoToLocation({
+        locationNameOrID: moveRobotRequest.locationNameOrID
+    }, (error, response) => {
+        if (error) {
+            console.log(`Error moving robot to ${moveRobotRequest.locationNameOrID}`);
+            console.error(error);
+
+            callback({
+                code:    grpc.status.INTERNAL,
+                details: "Error moving robot"
+            });
+
+            return;
+        }
+
+        callback(null, null);
     });
 }
 
@@ -216,7 +249,7 @@ function removeRobot(call, callback) {
     robots.splice(robotIndex, 1);
 }
 
-function SetRobotStatus(call, callback) {
+function setRobotStatus(call, callback) {
     const reportStatusRequest = call.request;
     const robotIndex = robots.findIndex((x) => x.serviceID == reportStatusRequest.serviceID)
 
@@ -332,12 +365,14 @@ discoveryService.registerService({
         server = new grpc.Server();
 
         server.addService(warehouseProto.WarehouseService.service, {
+            AddRobot:            addRobot,
+            SetRobotStatus:      setRobotStatus,
+            RemoveRobot:         removeRobot,
+            MoveRobot:           moveRobot,
+
             AddToLocation:       addToLocation,
             RemoveFromLocation:  removeFromLocation,
-            AddRobot:            addRobot,
-            RemoveRobot:         removeRobot,
-            SetRobotStatus:      SetRobotStatus,
-
+            
             ListRobots:          listRobots,
             ListLocations:       listLocations,
             ListLocationItems:   listLocationItems

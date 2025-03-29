@@ -9,6 +9,7 @@ service WarehouseService {
     rpc AddRobot            (ReportStatusRequest)              returns (google.protobuf.Empty);
     rpc SetRobotStatus      (ReportStatusRequest)              returns (google.protobuf.Empty);
     rpc RemoveRobot         (RemoveRobotRequest)               returns (google.protobuf.Empty);
+    rpc MoveRobot           (MoveRobotRequest)                 returns (google.protobuf.Empty);
 
     // Client side stream functions
     rpc AddToLocation       (stream AddToLocationRequest)      returns (google.protobuf.Empty);
@@ -29,6 +30,11 @@ message ReportStatusRequest {
 
 message RemoveRobotRequest {
     string serviceID = 1;
+}
+
+message MoveRobotRequest {
+    string serviceID = 1;
+    string locationNameOrID = 2;
 }
 
 message AddToLocationRequest {
