@@ -234,7 +234,7 @@ function loadItem(serviceID, itemName) {
         itemName:  itemName
     }, (error, response) => {
         if (error) {
-            console.log(`An error occurred loading '' onto robot`);
+            console.log(`An error occurred loading '${itemName}' onto robot ${serviceID}: `);
             console.error(error);
             return;
         }
@@ -242,7 +242,19 @@ function loadItem(serviceID, itemName) {
 }
 
 function unloadItem(serviceID) {
+    if (!serviceID) {
+        serviceID = readlineSync.question("Enter robot service ID: ");
+    }
 
+    warehouseService.UnloadItem({
+        serviceID: serviceID
+    }, (error, response) => {
+        if (error) {
+            console.log(`An error occurred unloading robot ${serviceID}: `);
+            console.error(error);
+            return;
+        }
+    });
 }
 
 // Sanitise all user inputs

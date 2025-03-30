@@ -355,7 +355,6 @@ function loadItem(call, callback) {
     const serviceID = call.request.serviceID;
     const itemName  = call.request.itemName;
 
-    console.log("a");
     const robot = robots.find((x) => x.serviceID == serviceID);
 
     if (!robot) {
@@ -367,7 +366,6 @@ function loadItem(call, callback) {
         return;
     }
     
-    console.log("b");
     const location = getLocationByNameOrID(robot.location);
     if (!location) {
         callback({
@@ -379,7 +377,6 @@ function loadItem(call, callback) {
     }
 
     // Make sure the item is present in the location
-    console.log("c");
     if (!location.Items.find((x) => x == itemName)) {
         callback({
             code:    grpc.status.NOT_FOUND,
@@ -398,7 +395,6 @@ function loadItem(call, callback) {
             return;
         }
         
-        console.log("d");
         // Remove item from the location
         const itemIndex = location.Items.findIndex((x) => x == itemName);
 
@@ -413,11 +409,76 @@ function loadItem(call, callback) {
         }
         
         location.Items.splice(itemIndex, 1);
+
+        callback(null, null);
     });
 }
 
 function unloadItem(call, callback) {
+    const serviceID = call.request.serviceID;
+    console.log("a");
+    
+    const robot = robots.find((x) => x.serviceID == serviceID);
 
+    console.log("b");
+    // Make sure robot exists
+    if (!robot) {
+        callback({
+            code: grpc.status.NOT_FOUND,
+            details: `Robot ${serviceID} not found`
+        }, null);
+        
+        return;
+    }
+
+    console.log("c");
+    // Make sure robot was holding an item
+    if (!robot.heldItem) {
+        callback({
+            code: grpc.status.NOT_FOUND,
+            details: `Robot ${serviceID} is not holding an item`
+        }, null);
+
+        return;
+    }
+
+    console.log("d");
+    // Make sure robot is at valid location
+    const location = getLocationByNameOrID(robot.location);
+    if (!location) {
+        callback({
+            code: grpc.status.NOT_FOUND,
+            details: `Location '${robot.location}' not found`
+        }, null);
+
+        return;
+    }
+    
+    console.log("e");
+    // Make sure location has enough space
+    if (location.Items.length >= location.MaxSize) {
+        callback({
+            code: grpc.status.RESOURCE_EXHAUSTED,
+            details: `Location '${location.Name}' is at capacity`
+        });
+
+        return;
+    }
+
+    console.log("f");
+    robot.Service.UnloadItem({ }, (error, response) => {
+        console.log(robot);
+        
+        if (error) {
+            console.log(`Error unloading item from ${robot.serviceID}`);
+            console.error(error);
+            return;
+        }
+
+        const itemName = robot.heldItem;
+        location.Items.push(itemName);
+        callback(null, null);
+    });
 }
 
 discoveryService.registerService({
