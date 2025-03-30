@@ -7,11 +7,15 @@ package robot;
 service RobotService {
     // Unary functions
     rpc LoadItem     (ItemRequest)           returns (google.protobuf.Empty);
-    rpc UnloadItem   (google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc UnloadItem   (google.protobuf.Empty) returns (ItemResponse);
     rpc GoToLocation (LocationRequest)       returns (LocationResponse);
 }
 
 message ItemRequest {
+    string itemName = 1;
+}
+
+message ItemResponse {
     string itemName = 1;
 }
 

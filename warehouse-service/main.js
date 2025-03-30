@@ -268,8 +268,9 @@ function setRobotStatus(call, callback) {
         console.log(`Robot ${robots[robotIndex].serviceID} is now at ${reportStatusRequest.location}`);
     }
 
-    robots[robotIndex].status = reportStatusRequest.status;
+    robots[robotIndex].status   = reportStatusRequest.status;
     robots[robotIndex].location = reportStatusRequest.location;
+    robots[robotIndex].heldItem = reportStatusRequest.heldItem;
 }
 
 function removeFromLocation(call, callback) {
@@ -321,7 +322,8 @@ function listRobots(call, callback) {
                 serviceID: robot.serviceID,
                 address:   robot.address,
                 status:    robot.status,
-                location:  robot.location
+                location:  robot.location,
+                heldItem:  robot.heldItem
             });
         }
 
@@ -349,6 +351,75 @@ function listLocations(call, callback) {
     call.end();
 }
 
+function loadItem(call, callback) {
+    const serviceID = call.request.serviceID;
+    const itemName  = call.request.itemName;
+
+    console.log("a");
+    const robot = robots.find((x) => x.serviceID == serviceID);
+
+    if (!robot) {
+        callback({
+            code: grpc.status.NOT_FOUND,
+            details: `Robot ${serviceID} not found`
+        }, null);
+        
+        return;
+    }
+    
+    console.log("b");
+    const location = getLocationByNameOrID(robot.location);
+    if (!location) {
+        callback({
+            code: grpc.status.NOT_FOUND,
+            details: `Location '${robot.location}' not found`
+        }, null);
+
+        return;
+    }
+
+    // Make sure the item is present in the location
+    console.log("c");
+    if (!location.Items.find((x) => x == itemName)) {
+        callback({
+            code:    grpc.status.NOT_FOUND,
+            details: `Item '${itemName}' not found at '${location.Name}'`
+        }, null);
+
+        return;
+    }
+
+    robot.Service.LoadItem({
+        itemName: itemName
+    }, (error, response) => {
+        if (error) {
+            console.log(`Error loading item onto ${robot.serviceID}`);
+            console.error(error);
+            return;
+        }
+        
+        console.log("d");
+        // Remove item from the location
+        const itemIndex = location.Items.findIndex((x) => x == itemName);
+
+        // Somehow missing? Perhaps someone took it before us!
+        if (itemIndex < -1) {
+            callback({
+                code:    grpc.status.NOT_FOUND,
+                details: `Item '${itemName}' not found at '${location.Name}'`
+            }, null);
+
+            return;
+        }
+        
+        location.Items.splice(itemIndex, 1);
+    });
+}
+
+function unloadItem(call, callback) {
+
+}
+
 discoveryService.registerService({
     serviceName: "warehouse",
     serviceAddress: address()
@@ -369,6 +440,8 @@ discoveryService.registerService({
             SetRobotStatus:      setRobotStatus,
             RemoveRobot:         removeRobot,
             MoveRobot:           moveRobot,
+            LoadItem:            loadItem,
+            UnloadItem:          unloadItem,
 
             AddToLocation:       addToLocation,
             RemoveFromLocation:  removeFromLocation,

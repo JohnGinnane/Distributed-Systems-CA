@@ -30,7 +30,8 @@ function listRobots() {
         if (!response) { return; }
         count++;
 
-        console.log(`${count}\t${response.serviceID}\t${response.address}\t${response.location}\t${response.status}`);
+        //console.log(response);
+        console.log(`${count}\t${response.serviceID}\t${response.address}\t${response.location}\t${response.status}\t${response.heldItem}`);
     });
 
     listRobotsCall.on("end", ()=>{});
@@ -219,6 +220,31 @@ function moveRobot(serviceID, locationNameOrID) {
     });
 }
 
+function loadItem(serviceID, itemName) {
+    if (!serviceID) {
+        serviceID = readlineSync.question("Enter robot service ID: ");
+    }
+
+    if (!itemName) {
+        itemName = readlineSync.question("What item do you want to load? ");
+    }
+
+    warehouseService.LoadItem({
+        serviceID: serviceID,
+        itemName:  itemName
+    }, (error, response) => {
+        if (error) {
+            console.log(`An error occurred loading '' onto robot`);
+            console.error(error);
+            return;
+        }
+    });
+}
+
+function unloadItem(serviceID) {
+
+}
+
 // Sanitise all user inputs
 if (!userInput) {
     console.log("0. to quit");
@@ -228,6 +254,8 @@ if (!userInput) {
     console.log("4. Insert items");
     console.log("5. Remove item");
     console.log("6. Move robot");
+    console.log("7. Load item onto robot");
+    console.log("8. Unload item from robot");
     
     userInput = readlineSync.questionInt("\nEnter Option: ").toString().trim().toLowerCase();
 }
@@ -273,13 +301,31 @@ switch (userInput) {
         break;
 
     case "6":
-        let serviceID        = "";
-        let locationNameOrID = "";
+        var serviceID        = "";
+        var locationNameOrID = "";
 
         if (process.argv[3]) { serviceID        = process.argv[3].toString().trim(); }
         if (process.argv[4]) { locationNameOrID = process.argv[4].toString().trim(); }
 
         moveRobot(serviceID, locationNameOrID);
+        break;
+
+    case "7":
+        var serviceID = "";
+        var itemName  = "";
+
+        if (process.argv[3]) { serviceID = process.argv[3].toString().trim(); }
+        if (process.argv[4]) { itemName  = process.argv[4].toString().trim(); }
+
+        loadItem(serviceID, itemName);
+        break;
+
+    case "8":
+        var serviceID = "";
+
+        if (process.argv[3]) { serviceID = process.argv[3].toString().trim(); }
+
+        unloadItem(serviceID);
         break;
 
     default:

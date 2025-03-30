@@ -30,28 +30,48 @@ function updateStatus() {
             serviceID: serviceID,
             address:   address(),
             status:    status,
-            location:  location
+            location:  location,
+            heldItem:  heldItem
         }, ()=>{});
     } catch (ex) {
         console.log("An error occurred updating robot status: ");
         console.error(ex);
     }
 }
+
 function loadItem(call, callback) {
-    // Robot must be placed at location that
-    // contains the item we want to load
-    const itemName = call.request.itemName;
-    const location = self.location;
-    
-    // Trying to remove item from location
-    heldItem = itemName;
-    updateStatus()
+    try {
+        // Robot must be placed at location that
+        // contains the item we want to load
+        const itemName = call.request.itemName;
+        heldItem = itemName;
+        updateStatus();
+    } catch (ex) {
+        console.log(`An error occurred trying to load '${itemName} at ${location}`);
+        console.error(ex);
+    }
 }
 
 function unloadItem(call, callback) {
-    // Will drop the held item at location
-    heldItem = "";
-    updateStatus();
+    try {
+        // Will drop the held item at location
+        warehouseService.AddToLocation({
+            locationNameOrID: location,
+            itemName: itemName
+        }, (error, response) => {
+            if (error) {
+                console.log(`An error occurred trying to unload '${itemName} at ${location}`);
+                console.error(error);
+                return;
+            }
+
+            heldItem = "";
+            updateStatus();
+        });
+    } catch (ex) {
+        console.log(`An error occurred trying to unload item '${itemName}':`);
+        console.error(ex);
+    }
 }
 
 function goToLocation(call, callback) {
