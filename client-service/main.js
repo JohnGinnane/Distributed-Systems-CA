@@ -241,6 +241,25 @@ function loadItem(serviceID, itemName) {
     });
 }
 
+function controlRobot(serviceID) {
+    if (!serviceID) {
+        serviceID = readlineSync.question("Enter robot service ID: ");
+    }
+    
+    // take control of a robot
+    while (userInput != "quit") {
+        process.stdout.write('\x1Bc');
+        console.log(`Controlling Robot ${serviceID};`);
+        console.log(`Commands: `);
+        console.log(`\tmove <location>`);
+        console.log(`\tload <item>`);
+        console.log(`\tunload`);
+        console.log(`\tquit`);
+
+        userInput = readlineSync.question("> ");
+    }
+}
+
 function help() {
     console.log("quit       > Quit");
     console.log("help       > Shows this list");
@@ -252,6 +271,7 @@ function help() {
     console.log("move       > Move robot");
     console.log("load       > Load item onto robot");
     console.log("unload     > Unload item from robot");
+    console.log("control    > Take control of a robot");
 }
 
 function unloadItem(serviceID) {
@@ -274,7 +294,7 @@ function unloadItem(serviceID) {
 if (!userInput) {
     help();
     
-    userInput = readlineSync.questionInt("\nEnter Option: ").toString().trim().toLowerCase();
+    userInput = readlineSync.question("\nEnter Option: ").toString().trim().toLowerCase();
 }
 
 switch (userInput) {
@@ -346,7 +366,11 @@ switch (userInput) {
         break;
 
     case "control":
-        // take control of a robot
+        var serviceID = "";
+        if (process.argv[3]) { serviceID        = process.argv[3].toString().trim(); }
+
+        controlRobot(serviceID);
+        
         break;
 
     default:
