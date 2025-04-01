@@ -416,11 +416,9 @@ function loadItem(call, callback) {
 
 function unloadItem(call, callback) {
     const serviceID = call.request.serviceID;
-    console.log("a");
     
     const robot = robots.find((x) => x.serviceID == serviceID);
 
-    console.log("b");
     // Make sure robot exists
     if (!robot) {
         callback({
@@ -431,7 +429,6 @@ function unloadItem(call, callback) {
         return;
     }
 
-    console.log("c");
     // Make sure robot was holding an item
     if (!robot.heldItem) {
         callback({
@@ -442,7 +439,6 @@ function unloadItem(call, callback) {
         return;
     }
 
-    console.log("d");
     // Make sure robot is at valid location
     const location = getLocationByNameOrID(robot.location);
     if (!location) {
@@ -454,7 +450,6 @@ function unloadItem(call, callback) {
         return;
     }
     
-    console.log("e");
     // Make sure location has enough space
     if (location.Items.length >= location.MaxSize) {
         callback({
@@ -465,13 +460,16 @@ function unloadItem(call, callback) {
         return;
     }
 
-    console.log("f");
     robot.Service.UnloadItem({ }, (error, response) => {
         console.log(robot);
         
         if (error) {
             console.log(`Error unloading item from ${robot.serviceID}`);
             console.error(error);
+            callback({
+                code: grpc.status.INTERNAL,
+                details: "An error occurred unloading item"
+            });
             return;
         }
 

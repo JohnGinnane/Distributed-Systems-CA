@@ -54,10 +54,13 @@ function loadItem(call, callback) {
 
 function unloadItem(call, callback) {
     try {
+        const itemName = heldItem;
         heldItem = "";
         updateStatus();
         
-        callback(null, null);
+        callback(null, {
+            itemName: heldItem
+        });
     } catch (ex) {
         console.log(`An error occurred trying to unload item '${itemName}':`);
         console.error(ex);
