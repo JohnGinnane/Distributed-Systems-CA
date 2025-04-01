@@ -241,6 +241,19 @@ function loadItem(serviceID, itemName) {
     });
 }
 
+function help() {
+    console.log("quit       > Quit");
+    console.log("help       > Shows this list");
+    console.log("robots     > List robots");
+    console.log("locations  > List locations");
+    console.log("items      > List location items");
+    console.log("insert     > Insert items");
+    console.log("remove     > Remove item");
+    console.log("move       > Move robot");
+    console.log("load       > Load item onto robot");
+    console.log("unload     > Unload item from robot");
+}
+
 function unloadItem(serviceID) {
     if (!serviceID) {
         serviceID = readlineSync.question("Enter robot service ID: ");
@@ -259,29 +272,21 @@ function unloadItem(serviceID) {
 
 // Sanitise all user inputs
 if (!userInput) {
-    console.log("0. to quit");
-    console.log("1. List robots");
-    console.log("2. List locations");
-    console.log("3. List location items");
-    console.log("4. Insert items");
-    console.log("5. Remove item");
-    console.log("6. Move robot");
-    console.log("7. Load item onto robot");
-    console.log("8. Unload item from robot");
+    help();
     
     userInput = readlineSync.questionInt("\nEnter Option: ").toString().trim().toLowerCase();
 }
 
 switch (userInput) {
-    case "1":
+    case "robots":
         listRobots();
         break;
 
-    case "2":
+    case "locations":
         listLocations();
         break;
 
-    case "3":
+    case "items":
         // Try to get the location from the arguments if possible
         var listLocation = "";
 
@@ -290,7 +295,7 @@ switch (userInput) {
         listLocationItems(listLocation);
         break;
 
-    case "4":
+    case "insert":
         // Try to get the location from the arguments if possible
         var location = "";
         var newItem  = "";
@@ -301,7 +306,7 @@ switch (userInput) {
         addItem(location, newItem);
         break;
 
-    case "5":
+    case "remove":
         // Try to get the location from the arguments if possible
         var location   = "";
         var targetItem = "";
@@ -312,7 +317,7 @@ switch (userInput) {
         removeItem(location, targetItem);
         break;
 
-    case "6":
+    case "move":
         var serviceID        = "";
         var locationNameOrID = "";
 
@@ -322,7 +327,7 @@ switch (userInput) {
         moveRobot(serviceID, locationNameOrID);
         break;
 
-    case "7":
+    case "load":
         var serviceID = "";
         var itemName  = "";
 
@@ -332,12 +337,16 @@ switch (userInput) {
         loadItem(serviceID, itemName);
         break;
 
-    case "8":
+    case "unload":
         var serviceID = "";
 
         if (process.argv[3]) { serviceID = process.argv[3].toString().trim(); }
 
         unloadItem(serviceID);
+        break;
+
+    case "control":
+        // take control of a robot
         break;
 
     default:

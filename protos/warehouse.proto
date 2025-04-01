@@ -21,6 +21,9 @@ service WarehouseService {
     rpc ListRobots          (google.protobuf.Empty)            returns (stream ReportStatusRequest);
     rpc ListLocations       (google.protobuf.Empty)            returns (stream LocationResponse);
     rpc ListLocationItems   (ListLocationItemsRequest)         returns (stream ItemResponse);
+
+    // Bi-Directional function
+    rpc ControlRobot        (stream ControlRobotRequest)       returns (stream ControlRobotResponse);
 }
 
 message ReportStatusRequest {
@@ -36,7 +39,7 @@ message RemoveRobotRequest {
 }
 
 message MoveRobotRequest {
-    string serviceID = 1;
+    string serviceID        = 1;
     string locationNameOrID = 2;
 }
 
@@ -52,12 +55,12 @@ message UnloadItemRequest {
 
 message AddToLocationRequest {
     string locationNameOrID = 1;
-    string itemName = 2;
+    string itemName         = 2;
 }
 
 message RemoveFromLocationRequest {
     string locationNameOrID = 1;
-    string itemName = 2;
+    string itemName         = 2;
 }
 
 message LocationResponse {
@@ -72,5 +75,18 @@ message ListLocationItemsRequest {
 }
 
 message ItemResponse {
-    string itemName = 1;
+    string itemName  = 1;
+}
+
+message ControlRobotRequest {
+    string serviceID = 1;
+    string action    = 2;
+    string value     = 3;
+}
+
+message ControlRobotResponse {
+    string serviceID = 1;
+    string location  = 2;
+    string heldItem  = 3;
+    string message   = 4;
 }
