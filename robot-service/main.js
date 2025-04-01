@@ -59,7 +59,7 @@ function unloadItem(call, callback) {
         updateStatus();
         
         callback(null, {
-            itemName: heldItem
+            itemName: itemName
         });
     } catch (ex) {
         console.log(`An error occurred trying to unload item '${itemName}':`);

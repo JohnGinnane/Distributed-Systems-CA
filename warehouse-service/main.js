@@ -461,8 +461,6 @@ function unloadItem(call, callback) {
     }
 
     robot.Service.UnloadItem({ }, (error, response) => {
-        console.log(robot);
-        
         if (error) {
             console.log(`Error unloading item from ${robot.serviceID}`);
             console.error(error);
@@ -473,8 +471,9 @@ function unloadItem(call, callback) {
             return;
         }
 
-        const itemName = robot.heldItem;
-        location.Items.push(itemName);
+        // Unloading an item returns the item in question
+        // in the response
+        location.Items.push(response.itemName);
         callback(null, null);
     });
 }
