@@ -241,6 +241,22 @@ function loadItem(serviceID, itemName) {
     });
 }
 
+function unloadItem(serviceID) {
+    if (!serviceID) {
+        serviceID = readlineSync.question("Enter robot service ID: ");
+    }
+
+    warehouseService.UnloadItem({
+        serviceID: serviceID
+    }, (error, response) => {
+        if (error) {
+            console.log(`An error occurred unloading robot ${serviceID}: `);
+            console.error(error);
+            return;
+        }
+    });
+}
+
 function controlRobot(serviceID) {
     if (!serviceID) {
         serviceID = readlineSync.question("Enter robot service ID: ");
@@ -249,14 +265,35 @@ function controlRobot(serviceID) {
     // take control of a robot
     while (userInput != "quit") {
         process.stdout.write('\x1Bc');
-        console.log(`Controlling Robot ${serviceID};`);
-        console.log(`Commands: `);
+        console.log(`Controlling Robot: ${serviceID}`);
+        console.log(`         Location: ${location}`);
+        console.log(`          Holding: ${heldItem}`);
+        console.log(`\nCommands: `);
         console.log(`\tmove <location>`);
         console.log(`\tload <item>`);
         console.log(`\tunload`);
         console.log(`\tquit`);
 
         userInput = readlineSync.question("> ");
+        args = userInput.split(" ");
+        cmd = args[0].trim().toLowerCase();
+        args.splice(0, 1);
+        params = args.join(" ");
+        console.log(`You want to '${cmd}' with a '${params}'? ew`);
+
+        switch (cmd) {
+            case "move":
+                moveRobot(serviceID, params);
+                break;
+
+            case "load":
+                loadItem(serviceID, params);
+                break;
+
+            case "unload":
+                unloadItem(serviceID);
+                break;
+        }
     }
 }
 
@@ -272,22 +309,6 @@ function help() {
     console.log("load       > Load item onto robot");
     console.log("unload     > Unload item from robot");
     console.log("control    > Take control of a robot");
-}
-
-function unloadItem(serviceID) {
-    if (!serviceID) {
-        serviceID = readlineSync.question("Enter robot service ID: ");
-    }
-
-    warehouseService.UnloadItem({
-        serviceID: serviceID
-    }, (error, response) => {
-        if (error) {
-            console.log(`An error occurred unloading robot ${serviceID}: `);
-            console.error(error);
-            return;
-        }
-    });
 }
 
 // Sanitise all user inputs

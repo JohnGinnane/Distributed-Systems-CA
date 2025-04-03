@@ -6,9 +6,10 @@ package warehouse;
 
 service WarehouseService {
     // Unary functions
-    rpc AddRobot            (ReportStatusRequest)              returns (google.protobuf.Empty);
-    rpc SetRobotStatus      (ReportStatusRequest)              returns (google.protobuf.Empty);
-    rpc RemoveRobot         (RemoveRobotRequest)               returns (google.protobuf.Empty);
+    rpc AddRobot            (ReportStatus)                     returns (google.protobuf.Empty);
+    rpc GetRobotStatus      (RobotID)                          returns (ReportStatus);
+    rpc SetRobotStatus      (ReportStatus)                     returns (google.protobuf.Empty);
+    rpc RemoveRobot         (RobotID)                          returns (google.protobuf.Empty);
     rpc MoveRobot           (MoveRobotRequest)                 returns (google.protobuf.Empty);
     rpc LoadItem            (LoadItemRequest)                  returns (google.protobuf.Empty);
     rpc UnloadItem          (UnloadItemRequest)                returns (google.protobuf.Empty);
@@ -18,7 +19,7 @@ service WarehouseService {
     rpc RemoveFromLocation  (stream RemoveFromLocationRequest) returns (google.protobuf.Empty);
 
     // Server side stream functions
-    rpc ListRobots          (google.protobuf.Empty)            returns (stream ReportStatusRequest);
+    rpc ListRobots          (google.protobuf.Empty)            returns (stream ReportStatus);
     rpc ListLocations       (google.protobuf.Empty)            returns (stream LocationResponse);
     rpc ListLocationItems   (ListLocationItemsRequest)         returns (stream ItemResponse);
 
@@ -26,7 +27,7 @@ service WarehouseService {
     rpc ControlRobot        (stream ControlRobotRequest)       returns (stream ControlRobotResponse);
 }
 
-message ReportStatusRequest {
+message ReportStatus {
     string serviceID = 1;
     string address   = 2;
     string status    = 3;
@@ -34,7 +35,7 @@ message ReportStatusRequest {
     string heldItem  = 5;
 }
 
-message RemoveRobotRequest {
+message RobotID {
     string serviceID = 1;
 }
 

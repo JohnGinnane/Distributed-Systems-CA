@@ -273,6 +273,32 @@ function setRobotStatus(call, callback) {
     robots[robotIndex].heldItem = reportStatusRequest.heldItem;
 }
 
+function getRobotStatus(call, callback) {
+    const serviceID = call.request.serviceID;
+    const robot = robots.find((x) => x.serviceID == serviceID);
+
+    if (!robot) {
+        callback({
+            code: grpc.status.NOT_FOUND,
+            details: `Couldn't find robot ${serviceID}!`
+        });
+
+        return;
+    }
+
+    callback(null, {
+        serviceID: robot.serviceID,
+        address:   robot.address,
+        status:    robot.status,
+        location:  robot.location,
+        heldItem:  robot.heldItem
+    });
+}
+
+function getRobotStatus(call, callback) {
+    
+}
+
 function removeFromLocation(call, callback) {
     // Client side streaming
     call.on("data", (RemoveFromLocationRequest) => {
@@ -573,6 +599,7 @@ discoveryService.registerService({
 
         server.addService(warehouseProto.WarehouseService.service, {
             AddRobot:            addRobot,
+            GetRobotStatus:      getRobotStatus,
             SetRobotStatus:      setRobotStatus,
             RemoveRobot:         removeRobot,
             MoveRobot:           moveRobot,
