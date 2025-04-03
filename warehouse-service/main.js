@@ -270,7 +270,7 @@ function setRobotStatus(call, callback) {
 
     robots[robotIndex].status   = reportStatusRequest.status;
     robots[robotIndex].location = reportStatusRequest.location;
-    robots[robotIndex].heldItem = reportStatusRequest.heldItem;
+    robots[robotIndex].heldItem = reportStatusRequest.heldItem || "";
 }
 
 function getRobotStatus(call, callback) {
@@ -293,10 +293,6 @@ function getRobotStatus(call, callback) {
         location:  robot.location,
         heldItem:  robot.heldItem
     });
-}
-
-function getRobotStatus(call, callback) {
-    
 }
 
 function removeFromLocation(call, callback) {
@@ -509,67 +505,72 @@ function unloadItem(call, callback) {
 // Reponds with results of action
 function controlRobot(call, callback) {
     call.on("data", function(ControlRobotRequest) {
-        var action = ControlRobotRequest.action.trim().toLowerCase();
-        var value  = ControlRobotRequest.value.trim();
-        const robot = robots.find((x) => x.serviceID == ControlRobotRequest.serviceID);
-        var response = {
-            serviceID: serviceID,
-            location:  robot.location,
-            heldItem:  robot.heldItem,
-            message:   ""
-        };
+        try {
+            var action = ControlRobotRequest.action.trim().toLowerCase();
+            var value  = ControlRobotRequest.value.trim();
+            const robot = robots.find((x) => x.serviceID == ControlRobotRequest.serviceID);
+            var response = {
+                serviceID: serviceID,
+                location:  robot.location,
+                heldItem:  robot.heldItem,
+                message:   ""
+            };
 
-        // Unable to find robot
-        if (!robot) {
-            callback({
-                code:    grpc.status.NOT_FOUND,
-                details: `Couldn't find robot ${moveRobotRequest.serviceID}!`
-            });
-
-            call.end();            
-            return;
-        }
-
-        switch (action) {
-            case "move":
-                robot.Service.GoToLocation({
-                    locationNameOrID: value
-                }, (error, response) => {
-                    if (error) {
-                        console.log(`Error moving robot to ${value}`);
-                        console.error(error);
-            
-                        callback({
-                            code:    grpc.status.INTERNAL,
-                            details: "Error moving robot"
-                        });
-            
-                        return;
-                    }
-
-                    response.location = response.locationNameOrID;
-                    response.message = `${response.serviceID} moved to ${response.location}`;
-                    call.write(response);
-                });
-
-                break;
-            case "load":
-                console.log("load item here");
-
-                break;
-            case "unload":
-                console.log("unload item here");
-                
-                break;
-            default:
-                // Invalid command sent!
+            // Unable to find robot
+            if (!robot) {
                 callback({
-                    code:    grpc.status.INVALID_ARGUMENT,
-                    details: "Invalid command issued"
+                    code:    grpc.status.NOT_FOUND,
+                    details: `Couldn't find robot ${moveRobotRequest.serviceID}!`
                 });
-        }
 
-        call.write(response);
+                call.end();            
+                return;
+            }
+
+            switch (action) {
+                case "move":
+                    robot.Service.GoToLocation({
+                        locationNameOrID: value
+                    }, (error, response) => {
+                        if (error) {
+                            console.log(`Error moving robot to ${value}`);
+                            console.error(error);
+                
+                            callback({
+                                code:    grpc.status.INTERNAL,
+                                details: "Error moving robot"
+                            });
+                
+                            return;
+                        }
+
+                        response.location = response.locationNameOrID;
+                        response.message = `${response.serviceID} moved to ${response.location}`;
+                        call.write(response);
+                    });
+
+                    break;
+                case "load":
+                    console.log("load item here");
+
+                    break;
+                case "unload":
+                    console.log("unload item here");
+                    
+                    break;
+                default:
+                    // Invalid command sent!
+                    callback({
+                        code:    grpc.status.INVALID_ARGUMENT,
+                        details: "Invalid command issued"
+                    });
+            }
+
+            call.write(response);
+        } catch (ex) {
+            console.log("An error occurred while controlling a robot: ");
+            console.error(ex);
+        }
     });
 
     call.on("end", function() {

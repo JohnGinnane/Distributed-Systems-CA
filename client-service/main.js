@@ -1,6 +1,7 @@
 const grpc         = require("@grpc/grpc-js");
 const protoLoader  = require("@grpc/proto-loader");
 const path         = require("path");
+const { createInterface } = require("readline");
 const readlineSync = require("readline-sync");
 
 let WAREHOUSE_ADDRESS = "127.0.0.1:50001";
@@ -257,44 +258,90 @@ function unloadItem(serviceID) {
     });
 }
 
+function controlConsole(robot) {
+    process.stdout.write('\x1Bc');
+    return `Controlling Robot: ${robot.serviceID}\n` + 
+           `         Location: ${robot.location}\n`  +
+           `          Holding: ${robot.heldItem}\n`  +
+           `\nCommands: \n`                          +
+           `\tmove <location>\n`                     +
+           `\tload <item>\n`                         +
+           `\tunload\n`                              +
+           `\tquit\n`
+}
+
 function controlRobot(serviceID) {
     if (!serviceID) {
         serviceID = readlineSync.question("Enter robot service ID: ");
     }
-    
-    // take control of a robot
-    while (userInput != "quit") {
-        process.stdout.write('\x1Bc');
-        console.log(`Controlling Robot: ${serviceID}`);
-        console.log(`         Location: ${location}`);
-        console.log(`          Holding: ${heldItem}`);
-        console.log(`\nCommands: `);
-        console.log(`\tmove <location>`);
-        console.log(`\tload <item>`);
-        console.log(`\tunload`);
-        console.log(`\tquit`);
 
-        userInput = readlineSync.question("> ");
-        args = userInput.split(" ");
-        cmd = args[0].trim().toLowerCase();
-        args.splice(0, 1);
-        params = args.join(" ");
-        console.log(`You want to '${cmd}' with a '${params}'? ew`);
-
-        switch (cmd) {
-            case "move":
-                moveRobot(serviceID, params);
-                break;
-
-            case "load":
-                loadItem(serviceID, params);
-                break;
-
-            case "unload":
-                unloadItem(serviceID);
-                break;
+    // Make sure the robot exists, get details
+    warehouseService.GetRobotStatus({
+        serviceID: serviceID
+    }, (error, response) => {
+        if (error) {
+            console.log(`An error occurred getting status of robot ${serviceID}: `);
+            console.error(error);
+            return;
         }
-    }
+
+        const robot = response;
+
+        // Once we know the robot exists then lets take control
+        var controlRobotCall = warehouseService.ControlRobot({ serviceID: robot.serviceID });
+        
+        // Use an interface to have two way control of the console
+        const rl = createInterface({
+            input:  process.stdin,
+            output: process.stdout
+        });
+
+        // Whenever we receive input then send command to warehouse
+        rl.on("line", (line) => {        
+            // Based on the incoming text do a command
+            console.log(controlConsole(robot, line));
+
+            // Separate out the action from the value for the inputted line
+            // e.g. "move abcd" ->
+            //      action = "move"
+            //      value  = "abcd"
+            var params = line.split(" ");
+            var action = params[0];
+
+            var value  = "";
+
+            if (params.length > 1) {
+                // If more than one argument was entered
+                // remove the action from the params and
+                // join the remaining values
+                params.splice(0, 1);
+                value = params.join(" ");
+            }
+
+            // Make the call to the warehouse
+            controlRobotCall.write({
+                serviceID: robot.serviceID,
+                action:    action,
+                value:     value
+            });
+        });
+
+        controlRobotCall.on("data", (ControlRobotResponse) => {
+            robot.location = ControlRobotResponse.location;
+            robot.heldItem = ControlRobotResponse.heldItem;
+
+            console.log(controlConsole(robot));
+        });
+
+        controlRobotCall.on("end", () => {
+
+        });
+
+        console.log("get robot status");
+        console.log(controlConsole(robot));
+        rl.question("hello? ");
+    })
+    
 }
 
 function help() {
