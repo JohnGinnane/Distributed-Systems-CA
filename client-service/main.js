@@ -258,7 +258,7 @@ function unloadItem(serviceID) {
     });
 }
 
-function controlConsole(robot) {
+function controlConsole(robot, line) {
     process.stdout.write('\x1Bc');
     return `Controlling Robot: ${robot.serviceID}\n` + 
            `         Location: ${robot.location}\n`  +
@@ -267,7 +267,8 @@ function controlConsole(robot) {
            `\tmove <location>\n`                     +
            `\tload <item>\n`                         +
            `\tunload\n`                              +
-           `\tquit\n`
+           `\tquit\n`                                +
+           `\n\nCommand: ${line}`;
 }
 
 function controlRobot(serviceID) {
@@ -300,6 +301,17 @@ function controlRobot(serviceID) {
         rl.on("line", (line) => {        
             // Based on the incoming text do a command
             console.log(controlConsole(robot, line));
+
+            // Do nothing if no input was entered
+            if (!line.trim()) { return; }
+
+            if (line.toLowerCase == "quit") {
+                console.log("hello!");
+                rl.close();
+                controlRobotCall.end();
+                return;
+
+            }
 
             // Separate out the action from the value for the inputted line
             // e.g. "move abcd" ->
@@ -334,12 +346,10 @@ function controlRobot(serviceID) {
         });
 
         controlRobotCall.on("end", () => {
-
+            controlRobotCall.end();
         });
-
-        console.log("get robot status");
+        
         console.log(controlConsole(robot));
-        rl.question("hello? ");
     })
     
 }

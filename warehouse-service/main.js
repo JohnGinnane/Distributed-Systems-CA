@@ -270,7 +270,7 @@ function setRobotStatus(call, callback) {
 
     robots[robotIndex].status   = reportStatusRequest.status;
     robots[robotIndex].location = reportStatusRequest.location;
-    robots[robotIndex].heldItem = reportStatusRequest.heldItem || "";
+    robots[robotIndex].heldItem = reportStatusRequest.heldItem;
 }
 
 function getRobotStatus(call, callback) {
@@ -503,14 +503,17 @@ function unloadItem(call, callback) {
 // Bi-Directional function to control a robot
 // Takes requests to move, load, or unload
 // Reponds with results of action
-function controlRobot(call, callback) {
+function controlRobot(call) {
     call.on("data", function(ControlRobotRequest) {
         try {
-            var action = ControlRobotRequest.action.trim().toLowerCase();
-            var value  = ControlRobotRequest.value.trim();
-            const robot = robots.find((x) => x.serviceID == ControlRobotRequest.serviceID);
-            var response = {
-                serviceID: serviceID,
+            const serviceID = ControlRobotRequest.serviceID;
+            const action    = ControlRobotRequest.action.trim().toLowerCase();
+            const value     = ControlRobotRequest.value.trim();
+
+            const robot = robots.find((x) => x.serviceID == serviceID);
+
+            var controlRobotResponse = {
+                serviceID: robot.serviceID,
                 location:  robot.location,
                 heldItem:  robot.heldItem,
                 message:   ""
@@ -518,12 +521,9 @@ function controlRobot(call, callback) {
 
             // Unable to find robot
             if (!robot) {
-                callback({
-                    code:    grpc.status.NOT_FOUND,
-                    details: `Couldn't find robot ${moveRobotRequest.serviceID}!`
-                });
-
-                call.end();            
+                controlRobotResponse.message = `Couldn't find robot ${robot.serviceID}!`;
+                call.write(controlRobotResponse);
+                call.end();
                 return;
             }
 
@@ -533,40 +533,83 @@ function controlRobot(call, callback) {
                         locationNameOrID: value
                     }, (error, response) => {
                         if (error) {
+                            // Serverside error logging
                             console.log(`Error moving robot to ${value}`);
                             console.error(error);
-                
-                            callback({
-                                code:    grpc.status.INTERNAL,
-                                details: "Error moving robot"
-                            });
-                
+
+                            // Clientside error logging
+                            controlRobotResponse.message = `Error moving robot to ${value}`;
+                            call.write(controlRobotResponse);
+                            call.end();
                             return;
                         }
 
-                        response.location = response.locationNameOrID;
-                        response.message = `${response.serviceID} moved to ${response.location}`;
-                        call.write(response);
+                        controlRobotResponse.location = response.locationNameOrID;
+                        controlRobotResponse.message = `${serviceID} moved to ${response.locationNameOrID}`;
+                        call.write(controlRobotResponse);
                     });
 
                     break;
                 case "load":
-                    console.log("load item here");
+                    robot.Service.LoadItem({
+                        itemName: value
+                    }, (error, response) => {
+                        if (error) {
+                            // Serverside error logging
+                            console.log(`Error loading item onto ${robot.serviceID}`);
+                            console.error(error);
+
+                            // Clientside error logging
+                            controlRobotResponse.message = `Error loading item onto ${robot.serviceID}`;
+                            call.write(controlRobotResponse);
+                            call.end();
+                            return;
+                        }
+                        
+                        // Remove item from the location
+                        var location = getLocationByNameOrID(robot.location);
+                        const itemIndex = location.Items.findIndex((x) => x == value);
+                        location.Items.splice(itemIndex, 1);
+                
+                        controlRobotResponse.heldItem = value;
+                        controlRobotResponse.message = `${serviceID} loaded ${value}`;
+                        call.write(controlRobotResponse);
+                    });
 
                     break;
                 case "unload":
-                    console.log("unload item here");
+                    robot.Service.UnloadItem({ }, (error, response) => {
+                        if (error) {
+                            // Serverside error logging
+                            console.log(`Error unloading item from ${robot.serviceID}`);
+                            console.error(error);
+
+                            // Clientside error logging
+                            controlRobotResponse.message = `Error unloading item from ${robot.serviceID}`;
+                            call.write(controlRobotResponse);
+                            call.end();
+                            return;
+                        }
+                
+                        // Unloading an item returns the item in question
+                        // in the response
+                        var location = getLocationByNameOrID(robot.location);
+                        location.Items.push(response.itemName);
+                        
+                        controlRobotResponse.message = `${serviceID} unloaded ${controlRobotResponse.heldItem}`;
+                        controlRobotResponse.heldItem = "";
+                        call.write(controlRobotResponse);
+                    });
                     
                     break;
+                case "quit":
+                    call.end();
+                    
                 default:
-                    // Invalid command sent!
-                    callback({
-                        code:    grpc.status.INVALID_ARGUMENT,
-                        details: "Invalid command issued"
-                    });
+                    // do nothing if invalid command was sent
             }
 
-            call.write(response);
+            call.write(controlRobotResponse);
         } catch (ex) {
             console.log("An error occurred while controlling a robot: ");
             console.error(ex);
