@@ -258,17 +258,19 @@ function unloadItem(serviceID) {
     });
 }
 
-function controlConsole(robot, line) {
-    process.stdout.write('\x1Bc');
+function controlConsole(robot, line, message) {
+    process.stdout.write('\x1Bc'); // This clears the screen and resets cursor
     return `Controlling Robot: ${robot.serviceID}\n` + 
            `         Location: ${robot.location}\n`  +
            `          Holding: ${robot.heldItem}\n`  +
            `\nCommands: \n`                          +
-           `\tmove <location>\n`                     +
-           `\tload <item>\n`                         +
-           `\tunload\n`                              +
-           `\tquit\n`                                +
-           `\n\nCommand: ${line}`;
+           `  move <location>\n`                     +
+           `  load <item>\n`                         +
+           `  unload\n`                              +
+           `  quit\n`                                +
+           //`\n\nCommand: ${line}\n`                  +
+            `\nMessage: ${message || ""}`            +
+            `\n\n`;
 }
 
 function controlRobot(serviceID) {
@@ -296,22 +298,16 @@ function controlRobot(serviceID) {
             input:  process.stdin,
             output: process.stdout
         });
+        
+        rl.setPrompt("");
 
         // Whenever we receive input then send command to warehouse
-        rl.on("line", (line) => {        
+        rl.on("line", (line) => {
             // Based on the incoming text do a command
             console.log(controlConsole(robot, line));
 
             // Do nothing if no input was entered
             if (!line.trim()) { return; }
-
-            if (line.toLowerCase == "quit") {
-                console.log("hello!");
-                rl.close();
-                controlRobotCall.end();
-                return;
-
-            }
 
             // Separate out the action from the value for the inputted line
             // e.g. "move abcd" ->
@@ -338,15 +334,18 @@ function controlRobot(serviceID) {
             });
         });
 
-        controlRobotCall.on("data", (ControlRobotResponse) => {
-            robot.location = ControlRobotResponse.location;
-            robot.heldItem = ControlRobotResponse.heldItem;
+        controlRobotCall.on("data", (controlRobotResponse) => {
+            robot.location = controlRobotResponse.location;
+            robot.heldItem = controlRobotResponse.heldItem;
 
-            console.log(controlConsole(robot));
+            console.log(controlConsole(robot, null, controlRobotResponse.message));
         });
 
         controlRobotCall.on("end", () => {
+            console.log("Goodbye!");
+            rl.close();
             controlRobotCall.end();
+            return;
         });
         
         console.log(controlConsole(robot));

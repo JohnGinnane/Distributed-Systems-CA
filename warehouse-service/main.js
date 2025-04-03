@@ -504,11 +504,11 @@ function unloadItem(call, callback) {
 // Takes requests to move, load, or unload
 // Reponds with results of action
 function controlRobot(call) {
-    call.on("data", function(ControlRobotRequest) {
+    call.on("data", function(controlRobotRequest) {
         try {
-            const serviceID = ControlRobotRequest.serviceID;
-            const action    = ControlRobotRequest.action.trim().toLowerCase();
-            const value     = ControlRobotRequest.value.trim();
+            const serviceID = controlRobotRequest.serviceID;
+            const action    = controlRobotRequest.action.trim().toLowerCase();
+            const value     = controlRobotRequest.value.trim();
 
             const robot = robots.find((x) => x.serviceID == serviceID);
 
@@ -529,24 +529,32 @@ function controlRobot(call) {
 
             switch (action) {
                 case "move":
+                    controlRobotResponse.message = `${serviceID} moving to ${value}`;
+                    call.write(controlRobotResponse);
+
                     robot.Service.GoToLocation({
                         locationNameOrID: value
                     }, (error, response) => {
-                        if (error) {
-                            // Serverside error logging
-                            console.log(`Error moving robot to ${value}`);
-                            console.error(error);
+                        try {
+                            if (error) {
+                                // Serverside error logging
+                                console.log(`Error moving robot to ${value}`);
+                                console.error(error);
 
-                            // Clientside error logging
-                            controlRobotResponse.message = `Error moving robot to ${value}`;
+                                // Clientside error logging
+                                controlRobotResponse.message = `Error moving robot to ${value}`;
+                                call.write(controlRobotResponse);
+                                call.end();
+                                return;
+                            }
+
+                            controlRobotResponse.location = response.locationNameOrID;
+                            controlRobotResponse.message = `${serviceID} moved to ${response.locationNameOrID}`;
                             call.write(controlRobotResponse);
-                            call.end();
-                            return;
+                        } catch (ex) {                            
+                            console.log("An error occurred while controlling a robot: ");
+                            console.error(ex);
                         }
-
-                        controlRobotResponse.location = response.locationNameOrID;
-                        controlRobotResponse.message = `${serviceID} moved to ${response.locationNameOrID}`;
-                        call.write(controlRobotResponse);
                     });
 
                     break;
@@ -554,62 +562,91 @@ function controlRobot(call) {
                     robot.Service.LoadItem({
                         itemName: value
                     }, (error, response) => {
-                        if (error) {
-                            // Serverside error logging
-                            console.log(`Error loading item onto ${robot.serviceID}`);
-                            console.error(error);
+                        try {
+                            if (error) {
+                                // Serverside error logging
+                                console.log(`Error loading item onto ${robot.serviceID}`);
+                                console.error(error);
 
-                            // Clientside error logging
-                            controlRobotResponse.message = `Error loading item onto ${robot.serviceID}`;
+                                // Clientside error logging
+                                controlRobotResponse.message = `Error loading item onto ${robot.serviceID}`;
+                                call.write(controlRobotResponse);
+                                call.end();
+                                return;
+                            }
+                            
+                            var location = getLocationByNameOrID(robot.location);
+
+                            // make sure location exists
+                            if (!location) {
+                                console.log(`Location '${robot.location}' could not be found!`);
+
+                                controlRobotResponse.message = `Error loading item onto ${robot.serviceID}`;
+                                call.write(controlRobotResponse);
+                                call.end();
+                                return;
+                            }
+
+                            const itemIndex = location.Items.findIndex((x) => x == value);
+
+                            // Make sure item exists
+                            if (itemIndex < 0) {
+                                console.log(`Item '${value}' could not be found at '${robot.location}'`);
+
+                                controlRobotResponse.message = `Error loading item onto ${robot.serviceID}`;
+                                call.write(controlRobotResponse);
+                                return;
+                            }
+
+                            location.Items.splice(itemIndex, 1);
+                    
+                            controlRobotResponse.heldItem = value;
+                            controlRobotResponse.message = `${serviceID} loaded ${value}`;
                             call.write(controlRobotResponse);
-                            call.end();
-                            return;
+                        } catch (ex) {
+                            console.log("An error occurred while controlling a robot: ");
+                            console.error(ex);
                         }
-                        
-                        // Remove item from the location
-                        var location = getLocationByNameOrID(robot.location);
-                        const itemIndex = location.Items.findIndex((x) => x == value);
-                        location.Items.splice(itemIndex, 1);
-                
-                        controlRobotResponse.heldItem = value;
-                        controlRobotResponse.message = `${serviceID} loaded ${value}`;
-                        call.write(controlRobotResponse);
                     });
 
                     break;
                 case "unload":
                     robot.Service.UnloadItem({ }, (error, response) => {
-                        if (error) {
-                            // Serverside error logging
-                            console.log(`Error unloading item from ${robot.serviceID}`);
-                            console.error(error);
+                        try {
+                            if (error) {
+                                // Serverside error logging
+                                console.log(`Error unloading item from ${robot.serviceID}`);
+                                console.error(error);
 
-                            // Clientside error logging
-                            controlRobotResponse.message = `Error unloading item from ${robot.serviceID}`;
+                                // Clientside error logging
+                                controlRobotResponse.message = `Error unloading item from ${robot.serviceID}`;
+                                call.write(controlRobotResponse);
+                                call.end();
+                                return;
+                            }
+                    
+                            // Unloading an item returns the item in question
+                            // in the response
+                            var location = getLocationByNameOrID(robot.location);
+                            location.Items.push(response.itemName);
+                            
+                            controlRobotResponse.message = `${serviceID} unloaded ${controlRobotResponse.heldItem}`;
+                            controlRobotResponse.heldItem = "";
                             call.write(controlRobotResponse);
-                            call.end();
-                            return;
+                        } catch (ex) {
+                            console.log("An error occurred while controlling a robot: ");
+                            console.error(ex);
                         }
-                
-                        // Unloading an item returns the item in question
-                        // in the response
-                        var location = getLocationByNameOrID(robot.location);
-                        location.Items.push(response.itemName);
-                        
-                        controlRobotResponse.message = `${serviceID} unloaded ${controlRobotResponse.heldItem}`;
-                        controlRobotResponse.heldItem = "";
-                        call.write(controlRobotResponse);
                     });
                     
                     break;
                 case "quit":
                     call.end();
                     
+                    break;                    
                 default:
                     // do nothing if invalid command was sent
             }
-
-            call.write(controlRobotResponse);
         } catch (ex) {
             console.log("An error occurred while controlling a robot: ");
             console.error(ex);
