@@ -19,6 +19,9 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+
+        <!-- jQuery -->
+        <script src="/jquery/jquery.js"></script>
     </head>
     <body>
         <div id="div-body">
@@ -27,9 +30,11 @@
                 <div class="col-lg-11">
                     <div class="p-2 box-round theme-purple">
                         <h3 class="p-2 m-1 d-flex align-items-center">
-                            <div class="col align-items-center">API Key: </div>
-                            <input id="input-api-key" class="col-8" type="text"/>
-                            <input id="input-submit-api" class="col m-2 btn btn-primary" type="submit" value="Authenticate"/>
+                            <div class="col align-items-center text-center">API Key:</div>
+                            <form id="form-api" class="col-10">
+                                <input id="input-api-key" class="col-10" name="key" type="text" value="<%= api_key %>"/>
+                                <input id="input-submit-api" class="col m-2 btn btn-primary" type="submit" value="Authenticate"/>
+                            </form>
                         </h3>
                     </div>
                 </div>

@@ -15,12 +15,25 @@ let server            = null;
 let locations         = [];
 const MAX_SHELF_SIZE  = 20;
 let robots            = [];
+const API_KEY         = generateNewID(16);
 
-function generateNewID() {
+console.log("MASTER API KEY: ");
+console.log(API_KEY);
+
+function generateNewID(length) {
+    length = length || 4;
+
     let newID = "";
 
+    // Keep generating new IDs until we find one that is unique
     while (newID == "" || locations.find(x => x.ID == newID)) {
-        newID = uuid.v4().substring(1, 5);
+        // Keep appending the new ID until it's long enough
+        while (newID.length < length) {
+            newID += uuid.v4().replaceAll("-", "");
+        }
+        
+        // Then truncate to match length
+        newID = newID.substring(1, length+1); // Add 1 as substring doesn't include last character
     }
 
     return newID;
