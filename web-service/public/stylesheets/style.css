@@ -1,8 +1,51 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    
+    /* CSS HEX */
+    /* Generated via https://coolors.co/cba8c7-efd384-a0d3a4-a1c5db-d58f7b */
+    --lilac: #cba8c7ff;
+    --jasmine: #efd384ff;
+    --celadon: #a0d3a4ff;
+    --powder-blue: #a1c5dbff;
+    --coral-pink: #d58f7bff;
+
+    /* Font */
+    /* https://fonts.google.com/specimen/Nunito */
+    font-family: "Nunito", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    font-style: normal;
 }
 
 a {
-  color: #00B7FF;
+    color: #00B7FF;
+}
+
+.box-round {
+    border-radius: 10px;
+}
+
+.theme-red {
+    background-color: var(--lilac);
+}
+
+.theme-yellow {
+    background-color: var(--jasmine);
+}
+
+.theme-green {
+    background-color: var(--celadon);
+}
+
+.theme-blue {
+    background-color: var(--powder-blue);
+}
+
+.theme-purple {
+    background-color: var(--lilac);
+}
+
+.debug {
+    border: 1px solid red;
 }
