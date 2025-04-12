@@ -9,6 +9,7 @@ body {
     --celadon: #a0d3a4ff;
     --powder-blue: #a1c5dbff;
     --coral-pink: #d58f7bff;
+    --button-primary: #2CC5DB;
 
     /* Font */
     /* https://fonts.google.com/specimen/Nunito */
@@ -27,7 +28,7 @@ a {
 }
 
 .theme-red {
-    background-color: var(--lilac);
+    background-color: var(--coral-pink);
 }
 
 .theme-yellow {
