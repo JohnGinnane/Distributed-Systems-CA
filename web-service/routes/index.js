@@ -46,16 +46,12 @@ wss.on('connection', function connection(ws) {
     });
 
     ws.on("close", (code, reason) => {
-        console.log("Closing Code:  ", code);
-        console.log("Closing Reason:", reason);
-
         // Remove this from the list of clients
         if (ws.id) {
             for (let k = webSocketClients.length-1; k >= 0; k--) {
                 let v = webSocketClients[k];
 
                 if (v.id == ws.id) {
-                    console.log("removing ", v.id);
                     webSocketClients.splice(k, 1);
                 }
             }
@@ -69,15 +65,70 @@ wss.on('connection', function connection(ws) {
         let v = webSocketClients[k];
 
         if (v.id == ws.id) {
-            console.log("found ", v.id)
             found = true;
             break;
         }
     }
 
     if (!found) {
-        console.log("Adding ws " + ws.id + " to list");
         webSocketClients.push(ws);
+        
+        // List robots and locations to the client
+
+        // ROBOTS
+        let listRobotsCall = warehouseService.ListRobots({});
+
+        listRobotsCall.on("data", (response) => {
+            if (!response) { return; }
+
+            for (let k = 0; k < webSocketClients.length; k++) {
+                let v = webSocketClients[k];
+
+                if (v.readyState == ws.OPEN) {
+                    let data = JSON.stringify({
+                        type: "robot",
+                        data: response
+                    });
+                    
+                    v.send(data);
+                }
+            }
+        });
+
+        listRobotsCall.on("end", () => {});
+
+        listRobotsCall.on("error", (e) => {
+            console.log("Error listing robots:");
+            console.error(e);
+        })
+
+        // LOCATIONS
+        let listLocationsCall = warehouseService.ListLocations();
+
+        listLocationsCall.on("data", (response) => {
+            if (!response) { return; }
+
+            for (let k = 0; k < webSocketClients.length; k++) {
+                let v = webSocketClients[k];
+
+                if (v.readyState == ws.OPEN) {
+                    let resp = JSON.stringify({
+                        type: "location",
+                        data: response
+                    });
+
+                    v.send(resp);
+                }
+            }
+        });
+        
+        listLocationsCall.on("end", () => {});
+
+        listLocationsCall.on("error", (e) => {
+            console.log("Error listing locations:");
+            console.error(e);
+        })
+
     }
 });
 
@@ -90,37 +141,6 @@ router.get('/', function(req, res, next) {
         title:   'Warehouse Controller',
         api_key: api_key
     });
-
-    let listRobotsCall = warehouseService.ListRobots({});
-
-    listRobotsCall.on("data", (response) => {
-        if (!response) { return; }
-        console.log("henlo");
-        console.log(webSocketClients.length);
-        
-        for (let k = 0; k < webSocketClients.length; k++) {
-            console.log(k);
-            let v = webSocketClients[k];
-            console.log(v.id);
-
-            if (v.readyState == ws.OPEN) {
-                let data = JSON.stringify({
-                    type: "robot",
-                    data: response
-                });
-
-                console.log(data);
-                v.send(data);
-            }
-        }
-    });
-
-    listRobotsCall.on("end", () => {});
-
-    listRobotsCall.on("error", (e) => {
-        console.log("Error listing robots:");
-        console.error(e);
-    })
 });
 
 module.exports = router;
