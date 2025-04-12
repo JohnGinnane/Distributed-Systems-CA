@@ -34,6 +34,17 @@ function generateNewID(length) {
     return newID;
 }
 
+/* GET home page. */
+router.get('/', function(req, res, next) {
+    // Server side JS
+    const api_key = req.query.key;
+
+    res.render('index', {
+        title:   'Warehouse Controller',
+        api_key: api_key
+    });
+});
+
 wss.on('connection', function connection(ws) {
     // Attach a unique ID
     if (!ws.id) {
@@ -74,6 +85,8 @@ wss.on('connection', function connection(ws) {
         webSocketClients.push(ws);
         
         // List robots and locations to the client
+        // Every time we open the page we want to transmit 
+        // this data via web sockets
 
         // ROBOTS
         let listRobotsCall = warehouseService.ListRobots({});
@@ -86,7 +99,7 @@ wss.on('connection', function connection(ws) {
 
                 if (v.readyState == ws.OPEN) {
                     let resp = JSON.stringify({
-                        type: "robot",
+                        type: "robots",
                         data: response
                     });
                     
@@ -100,7 +113,7 @@ wss.on('connection', function connection(ws) {
         listRobotsCall.on("error", (e) => {
             console.log("Error listing robots:");
             console.error(e);
-        })
+        });
 
         // LOCATIONS
         let listLocationsCall = warehouseService.ListLocations();
@@ -113,7 +126,7 @@ wss.on('connection', function connection(ws) {
 
                 if (v.readyState == ws.OPEN) {
                     let resp = JSON.stringify({
-                        type: "location",
+                        type: "locations",
                         data: response
                     });
 
@@ -127,20 +140,49 @@ wss.on('connection', function connection(ws) {
         listLocationsCall.on("error", (e) => {
             console.log("Error listing locations:");
             console.error(e);
-        })
+        });
 
+        // ITEMS
+        let listItemsCall = warehouseService.ListLocationItems({
+            locationNameOrID: "loading_bay"
+        });
+
+        listItemsCall.on("data", (response) => {
+            if (!response) { return; }
+
+            for (var k = 0; k < webSocketClients.length; k++) {
+                var v = webSocketClients[k];
+
+                if (v.readyState == ws.OPEN) {
+                    var resp = JSON.stringify({
+                        type: "items",
+                        data: response
+                    });
+
+                    v.send(resp);
+                }
+            }
+        });
+
+        listItemsCall.on("end", () => {});
+
+        listItemsCall.on("error", (e) => {
+            console.log("Error listing items:");
+            console.error(e);
+        });
     }
 });
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-    // Server side JS
-    const api_key = req.query.key;
+function listRobots(ws) {
 
-    res.render('index', {
-        title:   'Warehouse Controller',
-        api_key: api_key
-    });
-});
+}
+
+function listLocations(ws) {
+
+}
+
+function listItems(ws) {
+
+}
 
 module.exports = router;

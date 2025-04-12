@@ -4,49 +4,72 @@
 const webSocket = new WebSocket("ws://localhost:3001/", "echo-protocol");
 
 // Template rows for robots and locations
-const robotRow = `<tr>
+const robotRow = `<tr id="tr-robot-__id__" onclick="selectRobot('__id__')">
     <th scope="row">__id__</th>
     <td>__location__</td>
     <td>__heldItem__</td>
     <td>__status__</td>
 </tr>`;
 
-const locationRow = `<tr>
+const locationRow = `<tr id="tr-location-__id__" onclick="selectLocation('__id__')">
     <th scope="row">__id__</th>
     <td>__name__</td>
     <td>__itemCount__</td>
 </tr>`
 
+const itemRow = `<tr>
+    <th scope="row">__row__</th>
+    <td>__name__</td>
+</tr>`
+
+let itemNum = 0;
+
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
+
+    webSocket.send($("#input-api-key").val());
 }
 
+// The server will send back data for:
+//   1. Robots
+//   2. Locations
 webSocket.onmessage = (event) => {
     var response = JSON.parse(event.data);
     
     // Add the objects to respective list
     switch (response.type) {
-        case "robot":
+        case "robots":
             var tableRobots = $("#table-robots tbody");
             
             var newRobot = robotRow;
-            newRobot = newRobot.replace("__id__", response.data.serviceID);
-            newRobot = newRobot.replace("__location__", response.data.location);
-            newRobot = newRobot.replace("__heldItem__", response.data.heldItem);
-            newRobot = newRobot.replace("__status__", response.data.status);
+            newRobot = newRobot.replaceAll("__id__", response.data.serviceID);
+            newRobot = newRobot.replaceAll("__location__", response.data.location);
+            newRobot = newRobot.replaceAll("__heldItem__", response.data.heldItem);
+            newRobot = newRobot.replaceAll("__status__", response.data.status);
             tableRobots.append(newRobot);
 
             break;
 
-        case "location":
+        case "locations":
             var tableLocations = $("#table-locations tbody");
             var newLocation = locationRow;
 
-            newLocation = newLocation.replace("__id__", response.data.locationID);
-            newLocation = newLocation.replace("__name__", response.data.locationName);
+            newLocation = newLocation.replaceAll("__id__", response.data.locationID);
+            newLocation = newLocation.replaceAll("__name__", response.data.locationName);
             var itemCount = response.data.locationItemCount + "/" + response.data.locationMaxSize;
-            newLocation = newLocation.replace("__itemCount__", itemCount);
+            newLocation = newLocation.replaceAll("__itemCount__", itemCount);
             tableLocations.append(newLocation);
+
+            break;
+
+        case "items":
+            var tableItems = $("#table-items tbody");
+            var newItem = itemRow;
+            
+            itemNum++;
+            newItem = newItem.replace("__row__", itemNum);
+            newItem = newItem.replace("__name__", response.data.itemName);
+            tableItems.append(newItem);
 
             break;
 
@@ -63,3 +86,11 @@ $("#form-api").on("submit", (event) => {
     // Client side JS
     console.log("API Key:", $("#input-api-key").val());
 });
+
+function selectRobot(robot) {
+    console.log(robot);
+}
+
+function selectLocation(location) {
+    console.log(location);
+}
