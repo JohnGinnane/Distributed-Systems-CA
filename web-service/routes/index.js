@@ -85,12 +85,12 @@ wss.on('connection', function connection(ws) {
                 let v = webSocketClients[k];
 
                 if (v.readyState == ws.OPEN) {
-                    let data = JSON.stringify({
+                    let resp = JSON.stringify({
                         type: "robot",
                         data: response
                     });
                     
-                    v.send(data);
+                    v.send(resp);
                 }
             }
         });
