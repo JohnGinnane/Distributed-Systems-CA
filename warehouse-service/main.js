@@ -1,7 +1,7 @@
 const grpc         = require("@grpc/grpc-js");
 const protoLoader  = require("@grpc/proto-loader");
 const path         = require("path");
-const uuid = require("uuid");
+const uuid         = require("uuid");
 
 const discoveryProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/discovery.proto"))).discovery;
 const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
