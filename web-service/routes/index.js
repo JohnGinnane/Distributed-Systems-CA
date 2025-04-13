@@ -52,8 +52,34 @@ wss.on('connection', function connection(ws) {
         console.log("New websocket ID:", ws.id);
     }
 
-    ws.on('message', function message(data) {
-        console.log('received: %s', data);
+    ws.on('message', function message(req) {
+        try {
+            var data = JSON.parse(req);
+            console.log(data);
+
+            switch (data.action) {
+                case "listItemLocations":                        
+                    let resp = JSON.stringify({
+                        type: "clear",
+                        data: "items"
+                    });
+
+                    ws.send(resp);
+
+                    listItems(ws, data.data);
+
+                    break;
+
+                case "":
+                    break;
+
+                default:
+                    break;
+            }
+        } catch (ex) {
+            console.log("Error parsing incoming message:");
+            console.error(ex);
+        }
     });
 
     ws.on("close", (code, reason) => {
@@ -156,9 +182,9 @@ function listLocations(ws) {
     });
 }
 
-function listItems(ws) {
+function listItems(ws, locationNameOrID) {
     let listItemsCall = warehouseService.ListLocationItems({
-        locationNameOrID: "loading_bay"
+        locationNameOrID: locationNameOrID || "loading_bay"
     });
 
     listItemsCall.on("data", (response) => {

@@ -27,7 +27,12 @@ let itemNum = 0;
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
 
-    webSocket.send($("#input-api-key").val());
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "authentication"
+    }
+
+    webSocket.send(JSON.stringify(req));
 }
 
 // The server will send back data for:
@@ -72,6 +77,15 @@ webSocket.onmessage = (event) => {
             tableItems.append(newItem);
 
             break;
+
+        case "clear":
+            var target = response.data;
+
+            switch (target) {
+                case "items":
+                    $("#table-items tbody").empty();
+                    itemNum = 0;
+            }
 
         default: 
             break;
