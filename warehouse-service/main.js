@@ -686,11 +686,13 @@ function authenticate(call, callback) {
     if (apiKey == API_KEY) {
         console.log("Success!");
         callback(null, {
+            apiKey: apiKey,
             result: true
         });
     } else {
         console.log("Failed!");
         callback(null, {
+            apiKey: apiKey,
             result: false
         });
     }

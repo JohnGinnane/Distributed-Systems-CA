@@ -98,5 +98,6 @@ message AuthenticateRequest {
 }
 
 message AuthenticateResponse {
-    bool result = 1;
+    string apiKey = 1;
+    bool result = 2;
 }

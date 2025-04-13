@@ -32,6 +32,7 @@ var robots    = [];
 var items     = [];
 
 const itemsReceivedEvent = new Event("itemsReceived");
+const authenticatedEvent = new Event("authenticated");
 
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
@@ -39,6 +40,35 @@ webSocket.onopen = (event) => {
     // Try to authenticate right away if
     // API key filled in
     authenticate();
+
+    // Add event for when authenticate completes
+    document.addEventListener("authenticated", function() {
+        listRobots();
+        listLocations();
+    }, {once: true});
+
+}
+
+function listRobots() {
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "listRobots"
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
+function listLocations() {
+    var req = {
+        key: $("#input-api-key").val(),
+        action: "listLocations"
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
+function getItems() {
+
 }
 
 // The server will send back data for:
@@ -52,10 +82,11 @@ webSocket.onmessage = (event) => {
     // Parse the response from the server
     switch (response.type) {
         case "authenticate":
-            console.log("Authentication:");
-            console.log(response);
             if (response.result == true) {
-                // Successfully authenticated, load the warehouse data
+                console.log("Successfully authenticated with API key");
+                document.dispatchEvent(authenticatedEvent);
+            } else {
+                console.log("Unable to authenticate API key");
             }
 
             break;
@@ -185,7 +216,13 @@ webSocket.onerror = (event) => {
 // check the API key is valid
 $("#form-api").on("submit", (event) => {
     event.preventDefault();
-    console.log("API Key:", $("#input-api-key").val());
+    authenticate();
+    
+    // Add event for when authenticate completes
+    document.addEventListener("authenticated", function() {
+        listRobots();
+        listLocations();
+    }, {once: true});
 });
 
 // Authenticate API key
@@ -203,12 +240,7 @@ function authenticate() {
 // Get the details of the selected robot
 function selectRobot(robot) {
     // refresh list of robots
-    var req = {
-        key:    $("#input-api-key").val(),
-        action: "listRobots"
-    }
-
-    webSocket.send(JSON.stringify(req));
+    listRobots();
 
     var req = {
         key:    $("#input-api-key").val(),

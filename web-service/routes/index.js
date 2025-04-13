@@ -59,8 +59,6 @@ wss.on('connection', function connection(ws) {
             var apiKey = data.key;
             var action = data.action;
 
-            console.log(data);
-
             // Make sure the socket has authenticated with API key first
             // or if they are trying to authenticate then let them
             if (action != "authenticate" && ws.authenticated && ws.apiKey != apiKey) {
@@ -84,7 +82,11 @@ wss.on('connection', function connection(ws) {
                         ws.authenticated = response.result;
                         
                         if (response.result) {
-                            ws.apikey = apiKey;
+                            ws.apiKey = response.apiKey;
+                            ws.authenticated = response.result;
+                        } else {
+                            ws.apiKey = "";
+                            ws.authenticated = false;
                         }
 
                         var resp = {
