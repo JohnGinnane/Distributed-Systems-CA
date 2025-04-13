@@ -92,5 +92,11 @@ function selectRobot(robot) {
 }
 
 function selectLocation(location) {
-    console.log(location);
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "listItemLocations",
+        data:   location
+    }
+
+    webSocket.send(JSON.stringify(req));
 }

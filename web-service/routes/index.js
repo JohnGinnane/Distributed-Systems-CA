@@ -89,6 +89,17 @@ wss.on('connection', function connection(ws) {
         // this data via web sockets
 
         // ROBOTS
+        listRobots(ws);
+
+        // LOCATIONS
+        listLocations(ws)
+
+        // ITEMS
+        listItems(ws);
+    }
+});
+
+function listRobots(ws) {
         let listRobotsCall = warehouseService.ListRobots({});
 
         listRobotsCall.on("data", (response) => {
@@ -115,74 +126,64 @@ wss.on('connection', function connection(ws) {
             console.error(e);
         });
 
-        // LOCATIONS
-        let listLocationsCall = warehouseService.ListLocations();
-
-        listLocationsCall.on("data", (response) => {
-            if (!response) { return; }
-
-            for (let k = 0; k < webSocketClients.length; k++) {
-                let v = webSocketClients[k];
-
-                if (v.readyState == ws.OPEN) {
-                    let resp = JSON.stringify({
-                        type: "locations",
-                        data: response
-                    });
-
-                    v.send(resp);
-                }
-            }
-        });
-        
-        listLocationsCall.on("end", () => {});
-
-        listLocationsCall.on("error", (e) => {
-            console.log("Error listing locations:");
-            console.error(e);
-        });
-
-        // ITEMS
-        let listItemsCall = warehouseService.ListLocationItems({
-            locationNameOrID: "loading_bay"
-        });
-
-        listItemsCall.on("data", (response) => {
-            if (!response) { return; }
-
-            for (var k = 0; k < webSocketClients.length; k++) {
-                var v = webSocketClients[k];
-
-                if (v.readyState == ws.OPEN) {
-                    var resp = JSON.stringify({
-                        type: "items",
-                        data: response
-                    });
-
-                    v.send(resp);
-                }
-            }
-        });
-
-        listItemsCall.on("end", () => {});
-
-        listItemsCall.on("error", (e) => {
-            console.log("Error listing items:");
-            console.error(e);
-        });
-    }
-});
-
-function listRobots(ws) {
-
 }
 
 function listLocations(ws) {
+    let listLocationsCall = warehouseService.ListLocations();
 
+    listLocationsCall.on("data", (response) => {
+        if (!response) { return; }
+
+        for (let k = 0; k < webSocketClients.length; k++) {
+            let v = webSocketClients[k];
+
+            if (v.readyState == ws.OPEN) {
+                let resp = JSON.stringify({
+                    type: "locations",
+                    data: response
+                });
+
+                v.send(resp);
+            }
+        }
+    });
+    
+    listLocationsCall.on("end", () => {});
+
+    listLocationsCall.on("error", (e) => {
+        console.log("Error listing locations:");
+        console.error(e);
+    });
 }
 
 function listItems(ws) {
+    let listItemsCall = warehouseService.ListLocationItems({
+        locationNameOrID: "loading_bay"
+    });
 
+    listItemsCall.on("data", (response) => {
+        if (!response) { return; }
+
+        for (var k = 0; k < webSocketClients.length; k++) {
+            var v = webSocketClients[k];
+
+            if (v.readyState == ws.OPEN) {
+                var resp = JSON.stringify({
+                    type: "items",
+                    data: response
+                });
+
+                v.send(resp);
+            }
+        }
+    });
+
+    listItemsCall.on("end", () => {});
+
+    listItemsCall.on("error", (e) => {
+        console.log("Error listing items:");
+        console.error(e);
+    });
 }
 
 module.exports = router;
