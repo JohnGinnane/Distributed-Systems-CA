@@ -56,10 +56,47 @@ wss.on('connection', function connection(ws) {
     ws.on('message', function message(req) {
         try {
             var data = JSON.parse(req);
+            var apiKey = data.key;
+            var action = data.action;
+
             console.log(data);
 
+            // Make sure the socket has authenticated with API key first
+            // or if they are trying to authenticate then let them
+            if (action != "authenticate" && ws.authenticated && ws.apiKey != apiKey) {
+                console.log(`Websocket tried to call a function without authenticating!`);
+                return;
+            }
+
             // Parse the action the client wants to do
-            switch (data.action) {
+            switch (action) {
+                case "authenticate":
+                    // Client must authenticate before doing calls
+                    warehouseService.Authenticate({
+                        apiKey: apiKey
+                    }, (error, response) => {
+                        if (error) {
+                            console.log(`Error authenticating API key '${apiKey}'`);
+                            console.error(error);
+                            return;
+                        }
+
+                        ws.authenticated = response.result;
+                        
+                        if (response.result) {
+                            ws.apikey = apiKey;
+                        }
+
+                        var resp = {
+                            type: "authenticate",
+                            result: response.result
+                        }
+
+                        ws.send(JSON.stringify(resp));
+                    });
+
+                    break;
+
                 case "listLocations":
                     listLocations(ws);
                     break;
@@ -192,19 +229,6 @@ wss.on('connection', function connection(ws) {
 
     if (!found) {
         webSocketClients.push(ws);
-        
-        // List robots and locations to the client
-        // Every time we open the page we want to transmit 
-        // this data via web sockets
-
-        // ROBOTS
-        listRobots(ws);
-
-        // LOCATIONS
-        listLocations(ws)
-
-        // ITEMS
-        listItems(ws);
     }
 });
 

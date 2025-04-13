@@ -13,6 +13,7 @@ service WarehouseService {
     rpc MoveRobot           (MoveRobotRequest)                 returns (google.protobuf.Empty);
     rpc LoadItem            (LoadItemRequest)                  returns (google.protobuf.Empty);
     rpc UnloadItem          (UnloadItemRequest)                returns (google.protobuf.Empty);
+    rpc Authenticate        (AuthenticateRequest)              returns (AuthenticateResponse);
 
     // Client side stream functions
     rpc AddToLocation       (stream AddToLocationRequest)      returns (google.protobuf.Empty);
@@ -90,4 +91,12 @@ message ControlRobotResponse {
     string location  = 2;
     string heldItem  = 3;
     string message   = 4;
+}
+
+message AuthenticateRequest {
+    string apiKey = 1;
+}
+
+message AuthenticateResponse {
+    bool result = 1;
 }

@@ -38,14 +38,7 @@ webSocket.onopen = (event) => {
 
     // Try to authenticate right away if
     // API key filled in
-    if ($("#input-api-key").val()) {
-        var req = {
-            key:    $("#input-api-key").val(),
-            action: "authentication"
-        }
-
-        webSocket.send(JSON.stringify(req));
-    }
+    authenticate();
 }
 
 // The server will send back data for:
@@ -58,6 +51,15 @@ webSocket.onmessage = (event) => {
     
     // Parse the response from the server
     switch (response.type) {
+        case "authenticate":
+            console.log("Authentication:");
+            console.log(response);
+            if (response.result == true) {
+                // Successfully authenticated, load the warehouse data
+            }
+
+            break;
+
         case "robots":
             var robot = response.data;
             var tableRobots = $("#table-robots tbody");
@@ -182,9 +184,21 @@ webSocket.onerror = (event) => {
 // When you press authenticate
 // check the API key is valid
 $("#form-api").on("submit", (event) => {
-    // Client side JS
+    event.preventDefault();
     console.log("API Key:", $("#input-api-key").val());
 });
+
+// Authenticate API key
+function authenticate() {
+    if ($("#input-api-key").val()) {
+        var req = {
+            key:    $("#input-api-key").val(),
+            action: "authenticate"
+        }
+
+        webSocket.send(JSON.stringify(req));
+    }
+}
 
 // Get the details of the selected robot
 function selectRobot(robot) {

@@ -678,6 +678,24 @@ function controlRobot(call) {
     })
 }
 
+function authenticate(call, callback) {
+    const apiKey = call.request.apiKey;
+
+    console.log(`Authenticating ${apiKey}...`);
+
+    if (apiKey == API_KEY) {
+        console.log("Success!");
+        callback(null, {
+            result: true
+        });
+    } else {
+        console.log("Failed!");
+        callback(null, {
+            result: false
+        });
+    }
+}
+
 discoveryService.registerService({
     serviceName: "warehouse",
     serviceAddress: address()
@@ -701,6 +719,7 @@ discoveryService.registerService({
             MoveRobot:           moveRobot,
             LoadItem:            loadItem,
             UnloadItem:          unloadItem,
+            Authenticate:        authenticate,
 
             AddToLocation:       addToLocation,
             RemoveFromLocation:  removeFromLocation,
