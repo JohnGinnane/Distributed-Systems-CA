@@ -27,9 +27,11 @@ let itemNum = 0;
 let modalSelectLocation;
 let modalSelectItem;
 
-const locations = [];
-const robots    = [];
-const items     = [];
+var locations = [];
+var robots    = [];
+var items     = [];
+
+const itemsReceivedEvent = new Event("itemsReceived");
 
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
@@ -125,15 +127,8 @@ webSocket.onmessage = (event) => {
             break;
 
         case "items":
-            // Stream details of the location's items
-            var tableItems = $("#table-items tbody");
-            var newItem = itemRow;
-            
-            itemNum++;
-            newItem = newItem.replace("__row__", itemNum);
-            newItem = newItem.replace("__name__", response.data.itemName);
-            tableItems.append(newItem);
-
+            items = response.data;
+            document.dispatchEvent(itemsReceivedEvent);
             break;
 
         case "clear":
@@ -143,6 +138,7 @@ webSocket.onmessage = (event) => {
             switch (target) {
                 case "items":
                     $("#table-items tbody").empty();
+                    $("#select-load-item").empty();
                     itemNum = 0;
             }
 
@@ -216,6 +212,23 @@ function selectLocation(location) {
     }
 
     webSocket.send(JSON.stringify(req));
+
+    document.addEventListener("itemsReceived", function() {
+        console.log("location items");
+
+        // Stream details of the location's items
+        var tableItems = $("#table-items tbody");
+        tableItems.empty();
+
+        for (var k = 0; k < items.length; k++) {
+            var v = items[k].itemName;
+
+            var newItem = itemRow;
+            newItem = newItem.replace("__row__", k+1);
+            newItem = newItem.replace("__name__", v);
+            tableItems.append(newItem);
+        }
+    }, {once: true});
 }
 
 function moveRobot(e) {
@@ -243,7 +256,7 @@ function moveRobot(e) {
     modal.show();    
 }
 
-function moveRobotConfirm(e) {
+function moveRobotConfirm() {
     // Get selected location and robot and move it
     var robotID = $("#h5-robot-id").html();
     var locationID = $("#select-new-location").find(":selected").text();
@@ -252,8 +265,8 @@ function moveRobotConfirm(e) {
         key: $("#input-api-key").val(),
         action: "moveRobot",
         data: {
-            "serviceID": robotID,
-            "locationNameOrID": locationID
+            serviceID: robotID,
+            locationNameOrID: locationID
         }
     }
 
@@ -273,18 +286,73 @@ function loadUnload(e) {
         console.log(`Unable to find robot with ID '${serviceID}'`);
         return;
     }
-    
-    // Update our items
+
+    // Check if we're loading or unloading
+    switch (e.textContent.trim().toLowerCase()) {
+        case "load":
+            var req = {
+                key:    $("#input-api-key").val(),
+                action: "listItemLocations",
+                data:   robot.location
+            }
+        
+            webSocket.send(JSON.stringify(req));
+
+            document.addEventListener("itemsReceived", function() {
+                console.log("loading item");
+                
+                var selectLoadItem = $("#select-load-item");
+                selectLoadItem.empty();
+
+                for (var k = 0; k < items.length; k++) {
+                    var v = items[k].itemName;
+                    selectLoadItem.append(`<option value="${v}">${v}</option>`);
+                }
+            }, {once: true});
+
+            var modal = new bootstrap.Modal(modalSelectItem, {});
+            modal.show();
+            
+            break;
+        
+        case "unload":
+            var req = {
+                key: $("#input-api-key").val(),
+                action: "unloadItem",
+                data: {
+                    serviceID: serviceID
+                }
+            }
+
+            webSocket.send(JSON.stringify(req));
+
+            break;
+    }
+
+    // // Update our items
+    // var req = {
+    //     key: $("#input-api-key").val(),
+    //     action: "listItemLocations",
+    // }
+
+    // webSocket.send(JSON.stringify(req));
+
+}
+
+function loadItemConfirm() {
+    var robotID = $("#h5-robot-id").html();
+    var itemName = $("#select-item").find(":selected").text();
+
     var req = {
         key: $("#input-api-key").val(),
-        action: "listItemLocations",
-
+        action: "loadItem",
+        data: {
+            serviceID: robotID,
+            itemName: itemName
+        }
     }
 
     webSocket.send(JSON.stringify(req));
-
-    var modal = new bootstrap.Modal(modalSelectItem, {});
-    modal.show();
 }
 
 // Code to run on page load
@@ -292,7 +360,3 @@ document.addEventListener("DOMContentLoaded", function() {
     modalSelectLocation = document.getElementById('modal-select-location');
     modalSelectItem     = document.getElementById('modal-select-item');
 });
-
-$('#modal-select-location').on('shown.bs.modal', function () {
-    //$('#myInput').trigger('focus')
-  })

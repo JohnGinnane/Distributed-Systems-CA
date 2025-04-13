@@ -56,6 +56,7 @@ wss.on('connection', function connection(ws) {
     ws.on('message', function message(req) {
         try {
             var data = JSON.parse(req);
+            console.log(data);
 
             // Parse the action the client wants to do
             switch (data.action) {
@@ -91,7 +92,7 @@ wss.on('connection', function connection(ws) {
                 case "moveRobot":
                     var serviceID = data.data.serviceID;
                     var locationID = data.data.locationNameOrID;
-                    
+
                     warehouseService.MoveRobot({
                         serviceID: serviceID,
                         locationNameOrID: locationID
@@ -102,6 +103,34 @@ wss.on('connection', function connection(ws) {
                             return;
                         }
                     })
+
+                case "loadItem":
+                    var serviceID = data.data.serviceID;
+                    var itemName = data.data.itemName;
+
+                    warehouseService.LoadItem({
+                        serviceID: serviceID,
+                        itemName:  itemName
+                    }, (error, response) => {
+                        if (error) {
+                            console.log(`An error occurred loading '${itemName}' onto robot ${serviceID}: `);
+                            console.error(error);
+                            return;
+                        }
+                    });
+
+                case "unloadItem":
+                    var serviceID = data.data.serviceID;
+
+                    warehouseService.UnloadItem({
+                        serviceID: serviceID
+                    }, (error, response) => {
+                        if (error) {
+                            console.log(`An error occurred unloading robot ${serviceID}: `);
+                            console.error(error);
+                            return;
+                        }
+                    });
 
                 default:
                     break;
@@ -213,6 +242,8 @@ function listLocations(ws) {
 }
 
 function listItems(ws, locationNameOrID) {
+    var resp = [];
+
     let listItemsCall = warehouseService.ListLocationItems({
         locationNameOrID: locationNameOrID || "loading_bay"
     });
@@ -220,21 +251,23 @@ function listItems(ws, locationNameOrID) {
     listItemsCall.on("data", (response) => {
         if (!response) { return; }
 
+        resp.push(response);
+    });
+
+    listItemsCall.on("end", () => {
+        // Once we finished streaming the data
+        // lets push it to the client
         for (var k = 0; k < webSocketClients.length; k++) {
             var v = webSocketClients[k];
 
             if (v.readyState == ws.OPEN) {
-                var resp = JSON.stringify({
+                v.send(JSON.stringify({
                     type: "items",
-                    data: response
-                });
-
-                v.send(resp);
+                    data: resp
+                }));
             }
         }
     });
-
-    listItemsCall.on("end", () => {});
 
     listItemsCall.on("error", (e) => {
         console.log("Error listing items:");
