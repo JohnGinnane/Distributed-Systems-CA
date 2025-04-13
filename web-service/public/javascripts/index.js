@@ -42,7 +42,6 @@ webSocket.onopen = (event) => {
 //   4. Robot Details
 webSocket.onmessage = (event) => {
     var response = JSON.parse(event.data);
-    console.log(response);
     
     // Parse the response from the server
     switch (response.type) {
@@ -106,6 +105,18 @@ webSocket.onmessage = (event) => {
             $("#h5-robot-held-item").append(response.data.heldItem);
             $("#h5-robot-status").append(response.data.status);
 
+            // set these custom attributes so we can extract them later
+            // when the button is pressed
+            $("#button-move").attr("serviceID", response.data.serviceID);
+            $("#button-load-unload").attr("serviceID", response.data.serviceID);
+
+            // Set the text appropriately for loading/unloading an item
+            if (response.data.heldItem) {
+                $("#button-load-unload").html("Unload");
+            } else {
+                $("#button-load-unload").html("Load");
+            }
+            
             break
 
         default: 
@@ -129,7 +140,6 @@ function selectRobot(robot) {
         data:   robot
     }
 
-    console.log(req);
     webSocket.send(JSON.stringify(req));
 }
 
@@ -141,4 +151,23 @@ function selectLocation(location) {
     }
 
     webSocket.send(JSON.stringify(req));
+}
+
+function moveRobot(e) {
+    if (!e) { return; }
+    var serviceID = e.getAttribute("serviceid")
+    if (!serviceID) { return; }
+
+    // Need to get list of locations from server
+    // then prompt person what location to move to
+    // Use modal from bootstrap
+}
+
+function loadUnload(e) {
+    // Extract the robot ID from the element's "serviceID" attribute
+    if (!e) { return; }
+    var serviceID = e.getAttribute("serviceid")
+    if (!serviceID) { return; }
+    
+    console.log("Load / Unload: ", serviceID);
 }

@@ -44,7 +44,7 @@
                 <div class="col"></div>
                 <!-- Robots -->
                 <div class="row col-5 m-2 box-round theme-red h-50">
-                    <h3 class="p-2 m-1">
+                    <h3 class="p-2 m-1 fw-bold">
                         Robots
                     </h3>
                     <table id="table-robots" class="table table-hover">
@@ -69,7 +69,7 @@
 
                 <!-- Locations -->
                 <div class="row col-5 m-2 box-round theme-yellow h-50">
-                    <h3 class="p-2 m-1">Locations</h3>
+                    <h3 class="p-2 m-1 fw-bold">Locations</h3>
                     <table id="table-locations" class="table table-hover">
                         <thead class="thead-light">
                             <tr>
@@ -91,50 +91,56 @@
 
                 <!-- Selected Robot Information -->
                 <div class="row col-5 m-2 box-round theme-blue h-50">
-                    <h3 class="p-2 m-1">
+                    <h3 class="p-2 m-1 fw-bold">
                         Robot Information
                     </h3>
 
                     <div class="row">
-                        <div class="col">
-                            <h5 class="fw-bold">ID</h5>
+                        <div class="col-4 my-auto">
+                            <h5 class="m-1 fw-bold">ID</h5>
                         </div>
-                        <div class="col-8">
-                            <h5 class="fst-italic" id="h5-robot-id"></h5>
+                        <div class="col-8 my-auto">
+                            <h5 class="m-1 fst-italic" id="h5-robot-id"></h5>
                         </div>
                     </div>
                     
                     <div class="row">
-                        <div class="col">
-                            <h5 class="fw-bold">Location</h5>
+                        <div class="col-4 my-auto">
+                            <h5 class="m-1 fw-bold">Location</h5>
                         </div>
-                        <div class="col-8">
-                            <h5 class="fst-italic" id="h5-robot-location"></h5>
+                        <div class="col-5 my-auto">
+                            <h5 class="m-1 fst-italic" id="h5-robot-location"></h5>
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col">
-                            <h5 class="fw-bold">Held Item</h5>
-                        </div>
-                        <div class="col-8">
-                            <h5 class="fst-italic" id="h5-robot-held-item"></h5>
+                        <div class="col-3 my-auto">
+                            <button id="button-move" serviceID="" class="m-1 btn btn-primary align-items-center my-auto align-middle p-0" onclick="moveRobot(this)">Move</button>
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col">
-                            <h5 class="fw-bold">Status</h5>
+                        <div class="col-4 my-auto">
+                            <h5 class="m-1 fw-bold">Held Item</h5>
                         </div>
-                        <div class="col-8">
-                            <h5 class="fst-italic" id="h5-robot-status"></h5>
+                        <div class="col-5 my-auto">
+                            <h5 class="m-1 fst-italic" id="h5-robot-held-item"></h5>
+                        </div>
+                        <div class="col-3 my-auto">
+                            <button id="button-load-unload" serviceID="" class="m-1 btn btn-primary align-items-center my-auto align-middle p-0" onclick="loadUnload(this)">Load</button>
+                        </div>
+                    </div>
+
+                    <div class="row pb-3">
+                        <div class="col-4 my-auto">
+                            <h5 class="m-1 fw-bold align-middle">Status</h5>
+                        </div>
+                        <div class="col-8 my-auto">
+                            <h5 class="m-1 fst-italic" id="h5-robot-status"></h5>
                         </div>
                     </div>
                 </div>
 
                 <!-- Selected Location Information-->
                 <div class="row col-5 m-2 box-round theme-green h-50">
-                    <h3 class="p-2 m-1">
+                    <h3 class="p-2 m-1 fw-bold">
                         Location Information
                     </h3>
 

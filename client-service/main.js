@@ -451,5 +451,7 @@ switch (userInput) {
         break;
 
     default:
+        help();
+        
         break;
 }

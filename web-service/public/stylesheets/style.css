@@ -11,6 +11,9 @@ body {
     --coral-pink: #d58f7bff;
     --button-primary: #2CC5DB;
 
+    --action-button-width: 95px;
+    --action-button-height: 30px;
+
     /* Font */
     /* https://fonts.google.com/specimen/Nunito */
     font-family: "Nunito", sans-serif;
@@ -55,4 +58,22 @@ a {
 .table-hover > tbody > tr:hover > th {
     cursor: pointer;
     background-color: rgb(219, 219, 219);
+}
+
+#button-load-unload {
+    width: var(--action-button-width);
+    min-width: var(--action-button-width);
+
+    height: var(--action-button-height);
+    min-height: var(--action-button-height);
+    max-height: var(--action-button-height);
+}
+
+#button-move {
+    width: var(--action-button-width);
+    min-width: var(--action-button-width);
+
+    height: var(--action-button-height);
+    min-height: var(--action-button-height);
+    max-height: var(--action-button-height);
 }
