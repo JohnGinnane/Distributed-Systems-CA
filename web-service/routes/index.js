@@ -102,7 +102,9 @@ wss.on('connection', function connection(ws) {
                             console.error(error);
                             return;
                         }
-                    })
+                    });
+
+                    break;
 
                 case "loadItem":
                     var serviceID = data.data.serviceID;
@@ -119,6 +121,8 @@ wss.on('connection', function connection(ws) {
                         }
                     });
 
+                    break;
+
                 case "unloadItem":
                     var serviceID = data.data.serviceID;
 
@@ -131,6 +135,8 @@ wss.on('connection', function connection(ws) {
                             return;
                         }
                     });
+                    
+                    break;
 
                 default:
                     break;

@@ -142,6 +142,8 @@ webSocket.onmessage = (event) => {
                     itemNum = 0;
             }
 
+            break;
+
         case "robot":
             // Update the selected robot's details
             $("#h5-robot-id").empty();
@@ -328,20 +330,11 @@ function loadUnload(e) {
 
             break;
     }
-
-    // // Update our items
-    // var req = {
-    //     key: $("#input-api-key").val(),
-    //     action: "listItemLocations",
-    // }
-
-    // webSocket.send(JSON.stringify(req));
-
 }
 
 function loadItemConfirm() {
     var robotID = $("#h5-robot-id").html();
-    var itemName = $("#select-item").find(":selected").text();
+    var itemName = $("#select-load-item").find(":selected").text();
 
     var req = {
         key: $("#input-api-key").val(),
