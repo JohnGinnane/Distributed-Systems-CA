@@ -102,6 +102,12 @@ wss.on('connection', function connection(ws) {
                             console.error(error);
                             return;
                         }
+
+                        // ROBOTS
+                        listRobots(ws);
+                
+                        // LOCATIONS
+                        listLocations(ws)
                     });
 
                     break;
@@ -119,6 +125,12 @@ wss.on('connection', function connection(ws) {
                             console.error(error);
                             return;
                         }
+                        
+                        // ROBOTS
+                        listRobots(ws);
+                
+                        // LOCATIONS
+                        listLocations(ws)
                     });
 
                     break;
@@ -134,6 +146,12 @@ wss.on('connection', function connection(ws) {
                             console.error(error);
                             return;
                         }
+                        
+                        // ROBOTS
+                        listRobots(ws);
+                
+                        // LOCATIONS
+                        listLocations(ws)
                     });
                     
                     break;
