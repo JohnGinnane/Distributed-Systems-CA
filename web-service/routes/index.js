@@ -52,25 +52,32 @@ wss.on('connection', function connection(ws) {
         console.log("New websocket ID:", ws.id);
     }
 
+    // This is when the server receives a message from a client
     ws.on('message', function message(req) {
         try {
             var data = JSON.parse(req);
-            console.log(data);
 
+            // Parse the action the client wants to do
             switch (data.action) {
-                case "listItemLocations":                        
-                    let resp = JSON.stringify({
+                case "listItemLocations":
+                    // We have to clear the items for the 
+                    // client before sending the full list
+                    var resp = JSON.stringify({
                         type: "clear",
                         data: "items"
                     });
 
                     ws.send(resp);
 
+                    // Then list the items for that location
                     listItems(ws, data.data);
 
                     break;
 
-                case "":
+                case "getRobotInformation":
+                    // Get the details of the specified robot
+                    getRobotInformation(ws, data.data);
+
                     break;
 
                 default:
@@ -209,6 +216,25 @@ function listItems(ws, locationNameOrID) {
     listItemsCall.on("error", (e) => {
         console.log("Error listing items:");
         console.error(e);
+    });
+}
+
+function getRobotInformation(ws, serviceID) {
+    warehouseService.GetRobotStatus({
+        serviceID: serviceID
+    }, (error, response) => {
+        if (error) {
+            console.log(`An error occurred getting status of robot ${serviceID}: `);
+            console.error(error);
+            return;
+        }
+
+        var resp = JSON.stringify({
+            type: "robot",
+            data: response
+        });
+        
+        ws.send(resp);
     });
 }
 

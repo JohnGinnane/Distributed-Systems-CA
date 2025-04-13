@@ -38,12 +38,16 @@ webSocket.onopen = (event) => {
 // The server will send back data for:
 //   1. Robots
 //   2. Locations
+//   3. Location Items
+//   4. Robot Details
 webSocket.onmessage = (event) => {
     var response = JSON.parse(event.data);
+    console.log(response);
     
-    // Add the objects to respective list
+    // Parse the response from the server
     switch (response.type) {
         case "robots":
+            // Stream details of all robots
             var tableRobots = $("#table-robots tbody");
             
             var newRobot = robotRow;
@@ -56,6 +60,7 @@ webSocket.onmessage = (event) => {
             break;
 
         case "locations":
+            // Stream details of all the locations
             var tableLocations = $("#table-locations tbody");
             var newLocation = locationRow;
 
@@ -68,6 +73,7 @@ webSocket.onmessage = (event) => {
             break;
 
         case "items":
+            // Stream details of the location's items
             var tableItems = $("#table-items tbody");
             var newItem = itemRow;
             
@@ -79,6 +85,7 @@ webSocket.onmessage = (event) => {
             break;
 
         case "clear":
+            // Clear out the specified tables contents
             var target = response.data;
 
             switch (target) {
@@ -86,6 +93,20 @@ webSocket.onmessage = (event) => {
                     $("#table-items tbody").empty();
                     itemNum = 0;
             }
+
+        case "robot":
+            // Update the selected robot's details
+            $("#h5-robot-id").empty();
+            $("#h5-robot-location").empty();
+            $("#h5-robot-held-item").empty();
+            $("#h5-robot-status").empty();
+
+            $("#h5-robot-id").append(response.data.serviceID);
+            $("#h5-robot-location").append(response.data.location);
+            $("#h5-robot-held-item").append(response.data.heldItem);
+            $("#h5-robot-status").append(response.data.status);
+
+            break
 
         default: 
             break;
@@ -102,7 +123,14 @@ $("#form-api").on("submit", (event) => {
 });
 
 function selectRobot(robot) {
-    console.log(robot);
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "getRobotInformation",
+        data:   robot
+    }
+
+    console.log(req);
+    webSocket.send(JSON.stringify(req));
 }
 
 function selectLocation(location) {
