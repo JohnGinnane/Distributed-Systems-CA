@@ -82,13 +82,15 @@ locations.push({
     Items: []
 });
 
-// Set up first shelf
-locations.push({
-    ID: generateNewID(),
-    Name: "shelf:1",
-    MaxSize: MAX_SHELF_SIZE,
-    Items: []
-});
+// Set up shelves
+for (var i = 1; i <= 10; i++) {
+    locations.push({
+        ID: generateNewID(),
+        Name: "shelf_" + i,
+        MaxSize: MAX_SHELF_SIZE,
+        Items: []
+    });    
+}
 
 // Sample data
 add("loading_bay", "iPod");

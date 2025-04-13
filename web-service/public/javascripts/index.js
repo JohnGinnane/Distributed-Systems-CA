@@ -73,7 +73,7 @@ webSocket.onmessage = (event) => {
 
             break;
 
-        default:
+        default: 
             break;
     }
 };
