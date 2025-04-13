@@ -103,6 +103,11 @@ webSocket.onmessage = (event) => {
 
             break;
 
+        // When the server acknowledges our command lets raise an event
+        case "acknowledge":
+            document.dispatchEvent(new CustomEvent(ACKNOWLEDGED_EVENT));
+            break;
+
         case "robots":
             document.dispatchEvent(new CustomEvent(ROBOTS_RECEIVED_EVENT, {
                 detail: response.data
@@ -408,4 +413,23 @@ document.addEventListener(ACKNOWLEDGED_EVENT, function(e) {
     listLocations();
     selectRobot(selectedRobotID);
     listItems(selectedLocationID);
-})
+    
+    // When the list of items returns after selecting a location
+    // we need to handle the event
+    document.addEventListener(ITEMS_RECEIVED_EVENT, function(e) {
+        var items = e.detail;
+        
+        // Iterate over the event's details and populate table
+        var tableItems = $("#table-items tbody");
+        tableItems.empty();
+
+        for (var k = 0; k < items.length; k++) {
+            var v = items[k].itemName;
+
+            var newItem = itemRow;
+            newItem = newItem.replace("__row__", k+1);
+            newItem = newItem.replace("__name__", v);
+            tableItems.append(newItem);
+        }
+    }, {once: true});
+});
