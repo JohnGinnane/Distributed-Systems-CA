@@ -108,18 +108,7 @@ wss.on('connection', function connection(ws) {
                     break;
 
                 case "listItemLocations":
-                    // We have to clear the items for the 
-                    // client before sending the full list
-                    var resp = JSON.stringify({
-                        type: "clear",
-                        data: "items"
-                    });
-
-                    ws.send(resp);
-
-                    // Then list the items for that location
                     listItems(ws, data.data);
-
                     break;
 
                 case "getRobotInformation":
@@ -146,7 +135,7 @@ wss.on('connection', function connection(ws) {
                         listRobots(ws);
                 
                         // LOCATIONS
-                        listLocations(ws)
+                        listLocations(ws);
                     });
 
                     break;
@@ -169,7 +158,7 @@ wss.on('connection', function connection(ws) {
                         listRobots(ws);
                 
                         // LOCATIONS
-                        listLocations(ws)
+                        listLocations(ws);
                     });
 
                     break;
@@ -235,32 +224,36 @@ wss.on('connection', function connection(ws) {
 });
 
 function listRobots(ws) {
-        let listRobotsCall = warehouseService.ListRobots({});
+    // Make a list of all server streamed robots
+    // and send in one batch to the web socket client
+    var resp = [];
 
-        listRobotsCall.on("data", (response) => {
-            if (!response) { return; }
+    let listRobotsCall = warehouseService.ListRobots({});
 
-            for (let k = 0; k < webSocketClients.length; k++) {
-                let v = webSocketClients[k];
+    listRobotsCall.on("data", (response) => {
+        if (!response) { return; }
+        resp.push(response);
+    });
 
-                if (v.readyState == ws.OPEN) {
-                    let resp = JSON.stringify({
-                        type: "robots",
-                        data: response
-                    });
-                    
-                    v.send(resp);
-                }
+    listRobotsCall.on("end", () => {
+        // Once we finished streaming the data
+        // lets push it to the client
+        for (let k = 0; k < webSocketClients.length; k++) {
+            let v = webSocketClients[k];
+
+            if (v.readyState == ws.OPEN) {
+                v.send(JSON.stringify({
+                    type: "robots",
+                    data: resp
+                }));
             }
-        });
+        }
+    });
 
-        listRobotsCall.on("end", () => {});
-
-        listRobotsCall.on("error", (e) => {
-            console.log("Error listing robots:");
-            console.error(e);
-        });
-
+    listRobotsCall.on("error", (e) => {
+        console.log("Error listing robots:");
+        console.error(e);
+    });
 }
 
 function listLocations(ws) {

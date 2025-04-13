@@ -23,15 +23,17 @@ const itemRow = `<tr>
 </tr>`
 
 // Page-wide variables
-let itemNum = 0;
 let modalSelectLocation;
 let modalSelectItem;
+var selectedRobotID    = "";
+var selectedLocationID = "";
 
 var locations = [];
-var robots    = [];
-var items     = [];
 
-const itemsReceivedEvent = new Event("itemsReceived");
+const ITEMS_RECEIVED_EVENT     = "itemsReceived";
+const ROBOTS_RECEIVED_EVENT    = "robotsReceived";
+const LOCATIONS_RECEIVED_EVENT = "locationsReceived";
+
 const authenticatedEvent = new Event("authenticated");
 
 webSocket.onopen = (event) => {
@@ -67,8 +69,14 @@ function listLocations() {
     webSocket.send(JSON.stringify(req));
 }
 
-function getItems() {
+function listItems(location) {
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "listItemLocations",
+        data:   location
+    }
 
+    webSocket.send(JSON.stringify(req));
 }
 
 // The server will send back data for:
@@ -92,34 +100,9 @@ webSocket.onmessage = (event) => {
             break;
 
         case "robots":
-            var robot = response.data;
-            var tableRobots = $("#table-robots tbody");
-
-            // Check if robot is already in our list
-            var robotIndex = robots.findIndex((x) => x.serviceID == robot.serviceID);
-
-            // If we found it then update our array and table
-            if (robotIndex > -1) {
-                robots[robotIndex].location = robot.location;
-                robots[robotIndex].heldItem = robot.heldItem;
-                robots[robotIndex].status   = robot.status;
-
-                // Update row on table
-                var existingRow = $("#table-robots tbody tr#tr-robot-" + robot.serviceID);
-                existingRow.find("td[type='location']").html(robot.location);
-                existingRow.find("td[type='heldItem']").html(robot.heldItem);
-                existingRow.find("td[type='status']").html(robot.status);
-            } else {
-                robots.push(robot);
-
-                // Add to the table
-                var newRobot = robotRow;
-                newRobot = newRobot.replaceAll("__id__", robot.serviceID);
-                newRobot = newRobot.replaceAll("__location__", robot.location);
-                newRobot = newRobot.replaceAll("__heldItem__", robot.heldItem);
-                newRobot = newRobot.replaceAll("__status__", robot.status);
-                tableRobots.append(newRobot);                
-            }
+            document.dispatchEvent(new CustomEvent(ROBOTS_RECEIVED_EVENT, {
+                detail: response.data
+            }));
 
             break;
 
@@ -160,34 +143,19 @@ webSocket.onmessage = (event) => {
             break;
 
         case "items":
-            items = response.data;
-            document.dispatchEvent(itemsReceivedEvent);
-            break;
-
-        case "clear":
-            // Clear out the specified tables contents
-            var target = response.data;
-
-            switch (target) {
-                case "items":
-                    $("#table-items tbody").empty();
-                    $("#select-load-item").empty();
-                    itemNum = 0;
-            }
+            // Raise event that we have received a list of items from the server
+            document.dispatchEvent(new CustomEvent(ITEMS_RECEIVED_EVENT, {
+                detail: response.data
+            }));
 
             break;
 
         case "robot":
             // Update the selected robot's details
-            $("#h5-robot-id").empty();
-            $("#h5-robot-location").empty();
-            $("#h5-robot-held-item").empty();
-            $("#h5-robot-status").empty();
-
-            $("#h5-robot-id").append(response.data.serviceID);
-            $("#h5-robot-location").append(response.data.location);
-            $("#h5-robot-held-item").append(response.data.heldItem);
-            $("#h5-robot-status").append(response.data.status);
+            $("#h5-robot-id").html(response.data.serviceID);
+            $("#h5-robot-location").html(response.data.location);
+            $("#h5-robot-held-item").html(response.data.heldItem);
+            $("#h5-robot-status").html(response.data.status);
 
             // set these custom attributes so we can extract them later
             // when the button is pressed
@@ -217,7 +185,7 @@ webSocket.onerror = (event) => {
 $("#form-api").on("submit", (event) => {
     event.preventDefault();
     authenticate();
-    
+
     // Add event for when authenticate completes
     document.addEventListener("authenticated", function() {
         listRobots();
@@ -239,13 +207,12 @@ function authenticate() {
 
 // Get the details of the selected robot
 function selectRobot(robot) {
-    // refresh list of robots
-    listRobots();
+    selectedRobotID = robot;
 
     var req = {
         key:    $("#input-api-key").val(),
         action: "getRobotInformation",
-        data:   robot
+        data:   selectedRobotID
     }
 
     webSocket.send(JSON.stringify(req));
@@ -253,18 +220,15 @@ function selectRobot(robot) {
 
 // Get the items for the selected 
 function selectLocation(location) {
-    var req = {
-        key:    $("#input-api-key").val(),
-        action: "listItemLocations",
-        data:   location
-    }
+    selectedLocationID = location;
+    listItems(selectedLocationID);
 
-    webSocket.send(JSON.stringify(req));
-
-    document.addEventListener("itemsReceived", function() {
-        console.log("location items");
-
-        // Stream details of the location's items
+    // When the list of items returns after selecting a location
+    // we need to handle the event
+    document.addEventListener(ITEMS_RECEIVED_EVENT, function(e) {
+        var items = e.detail;
+        
+        // Iterate over the event's details and populate table
         var tableItems = $("#table-items tbody");
         tableItems.empty();
 
@@ -324,30 +288,21 @@ function moveRobotConfirm() {
 function loadUnload(e) {
     // Extract the robot ID from the element's "serviceID" attribute
     if (!e) { return; }
-    var serviceID = e.getAttribute("serviceid")
-    if (!serviceID) { return; }
+    if (!selectedRobotID) { return; }
     
-    // Get the select robot
-    var robot = robots.find((x) => (x.serviceID == serviceID));
-
-    if (!robot) {
-        console.log(`Unable to find robot with ID '${serviceID}'`);
-        return;
-    }
-
     // Check if we're loading or unloading
     switch (e.textContent.trim().toLowerCase()) {
         case "load":
             var req = {
                 key:    $("#input-api-key").val(),
                 action: "listItemLocations",
-                data:   robot.location
+                data:   $("#h5-robot-location").html()
             }
         
             webSocket.send(JSON.stringify(req));
 
-            document.addEventListener("itemsReceived", function() {
-                console.log("loading item");
+            document.addEventListener(ITEMS_RECEIVED_EVENT, function(e) {
+                var items = e.detail;
                 
                 var selectLoadItem = $("#select-load-item");
                 selectLoadItem.empty();
@@ -368,11 +323,15 @@ function loadUnload(e) {
                 key: $("#input-api-key").val(),
                 action: "unloadItem",
                 data: {
-                    serviceID: serviceID
+                    serviceID: selectedRobotID
                 }
             }
 
             webSocket.send(JSON.stringify(req));
+
+            // Refresh our data
+            listRobots();
+            listLocations();
 
             break;
     }
@@ -398,4 +357,38 @@ function loadItemConfirm() {
 document.addEventListener("DOMContentLoaded", function() {
     modalSelectLocation = document.getElementById('modal-select-location');
     modalSelectItem     = document.getElementById('modal-select-item');
+});
+
+// Every time we get robot data lets parse it
+document.addEventListener(ROBOTS_RECEIVED_EVENT, function(e) {
+    var robots = e.detail;
+    var tableRobots = $("#table-robots tbody");
+
+    tableRobots.empty();
+
+    for (var k = 0; k < robots.length; k++) {
+        var v = robots[k];
+
+        // Add to the table
+        var newRobot = robotRow;
+        newRobot = newRobot.replaceAll("__id__", v.serviceID);
+        newRobot = newRobot.replaceAll("__location__", v.location);
+        newRobot = newRobot.replaceAll("__heldItem__", v.heldItem);
+        newRobot = newRobot.replaceAll("__status__", v.status);
+        tableRobots.append(newRobot);
+
+        // Update selected robot if necessary
+        if (v.serviceID == selectedRobotID) {
+            $("#h5-robot-id").html(v.serviceID);
+            $("#h5-robot-location").html(v.location);
+            $("#h5-robot-held-item").html(v.heldItem);
+            $("#h5-robot-status").html(v.status);
+            
+            if (v.heldItem) {
+                $("#button-load-unload").html("Unload");
+            } else {
+                $("#button-load-unload").html("Load");
+            }
+        }
+    }
 });
