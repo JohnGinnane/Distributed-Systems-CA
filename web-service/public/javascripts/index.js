@@ -6,15 +6,15 @@ const webSocket = new WebSocket("ws://localhost:3001/", "echo-protocol");
 // Template rows for robots and locations
 const robotRow = `<tr id="tr-robot-__id__" onclick="selectRobot('__id__')">
     <th scope="row">__id__</th>
-    <td>__location__</td>
-    <td>__heldItem__</td>
-    <td>__status__</td>
+    <td type="location">__location__</td>
+    <td type="heldItem">__heldItem__</td>
+    <td type="status">__status__</td>
 </tr>`;
 
 const locationRow = `<tr id="tr-location-__id__" onclick="selectLocation('__id__')">
     <th scope="row">__id__</th>
-    <td>__name__</td>
-    <td>__itemCount__</td>
+    <td type="locationName">__name__</td>
+    <td type="itemCount">__itemCount__</td>
 </tr>`
 
 const itemRow = `<tr>
@@ -26,6 +26,10 @@ const itemRow = `<tr>
 let itemNum = 0;
 let modalSelectLocation;
 let modalSelectItem;
+
+const locations = [];
+const robots    = [];
+const items     = [];
 
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
@@ -53,29 +57,71 @@ webSocket.onmessage = (event) => {
     // Parse the response from the server
     switch (response.type) {
         case "robots":
-            // Stream details of all robots
+            var robot = response.data;
             var tableRobots = $("#table-robots tbody");
-            
-            var newRobot = robotRow;
-            newRobot = newRobot.replaceAll("__id__", response.data.serviceID);
-            newRobot = newRobot.replaceAll("__location__", response.data.location);
-            newRobot = newRobot.replaceAll("__heldItem__", response.data.heldItem);
-            newRobot = newRobot.replaceAll("__status__", response.data.status);
-            tableRobots.append(newRobot);
+
+            // Check if robot is already in our list
+            var robotIndex = robots.findIndex((x) => x.serviceID == robot.serviceID);
+
+            // If we found it then update our array and table
+            if (robotIndex > -1) {
+                robots[robotIndex].location = robot.location;
+                robots[robotIndex].heldItem = robot.heldItem;
+                robots[robotIndex].status   = robot.status;
+
+                // Update row on table
+                var existingRow = $("#table-robots tbody tr#tr-robot-" + robot.serviceID);
+                existingRow.find("td[type='location']").html(robot.location);
+                existingRow.find("td[type='heldItem']").html(robot.heldItem);
+                existingRow.find("td[type='status']").html(robot.status);
+            } else {
+                robots.push(robot);
+
+                // Add to the table
+                var newRobot = robotRow;
+                newRobot = newRobot.replaceAll("__id__", robot.serviceID);
+                newRobot = newRobot.replaceAll("__location__", robot.location);
+                newRobot = newRobot.replaceAll("__heldItem__", robot.heldItem);
+                newRobot = newRobot.replaceAll("__status__", robot.status);
+                tableRobots.append(newRobot);                
+            }
 
             break;
 
         case "locations":
-            // Stream details of all the locations
+            var location = response.data;
             var tableLocations = $("#table-locations tbody");
-            var newLocation = locationRow;
+            
+            // Check if location is already in our list
+            var locationIndex = locations.findIndex((x) => x.locationID == location.locationID);
 
-            newLocation = newLocation.replaceAll("__id__", response.data.locationID);
-            newLocation = newLocation.replaceAll("__name__", response.data.locationName);
-            var itemCount = response.data.locationItemCount + "/" + response.data.locationMaxSize;
-            newLocation = newLocation.replaceAll("__itemCount__", itemCount);
-            tableLocations.append(newLocation);
+            if (locationIndex > -1) {
+                locations[locationIndex].locationID = location.locationID;
+                locations[locationIndex].locationName = location.locationName;
+                locations[locationIndex].locationItemCount = location.locationItemCount;
+                locations[locationIndex].locationMaxSize = location.locationMaxSize;
 
+                // Update row on table
+                var existingRow = $("#table-locations tbody tr#tr-location-" + location.locationID);
+                existingRow.find("td[type='locationName']").html(location.locationName);
+                var itemCount = location.locationItemCount + "/" + location.locationMaxSize;
+                existingRow.find("td[type='itemCount']").html(itemCount);
+            } else {
+                locations.push(location);
+                
+                // Add new location to table
+                var newLocation = locationRow;
+
+                newLocation = newLocation.replaceAll("__id__", location.locationID);
+                newLocation = newLocation.replaceAll("__name__", location.locationName);
+                var itemCount = location.locationItemCount + "/" + location.locationMaxSize;
+                newLocation = newLocation.replaceAll("__itemCount__", itemCount);
+                tableLocations.append(newLocation);
+            }
+
+            // Always add to the dropdown in the modal
+            $("#select-new-location").append(`<option value="${location.locationID}">${location.locationName}</option>`);
+            
             break;
 
         case "items":
@@ -144,6 +190,14 @@ $("#form-api").on("submit", (event) => {
 
 // Get the details of the selected robot
 function selectRobot(robot) {
+    // refresh list of robots
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "listRobots"
+    }
+
+    webSocket.send(JSON.stringify(req));
+
     var req = {
         key:    $("#input-api-key").val(),
         action: "getRobotInformation",
@@ -165,6 +219,7 @@ function selectLocation(location) {
 }
 
 function moveRobot(e) {
+    console.log("Move robot!");
     if (!e) { return; }
     var serviceID = e.getAttribute("serviceid")
     if (!serviceID) { return; }
@@ -172,9 +227,37 @@ function moveRobot(e) {
     // Need to get list of locations from server
     // then prompt person what location to move to
     // Use modal from bootstrap
+
+    // Empty the dropdown in the modal
+    $("#select-new-location").empty();    
+    
+    // Update our locations, this will remake the dropdown items
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "listLocations"
+    }
+
+    webSocket.send(JSON.stringify(req));
     
     var modal = new bootstrap.Modal(modalSelectLocation, {});
     modal.show();    
+}
+
+function moveRobotConfirm(e) {
+    // Get selected location and robot and move it
+    var robotID = $("#h5-robot-id").html();
+    var locationID = $("#select-new-location").find(":selected").text();
+
+    var req = {
+        key: $("#input-api-key").val(),
+        action: "moveRobot",
+        data: {
+            "serviceID": robotID,
+            "locationNameOrID": locationID
+        }
+    }
+
+    webSocket.send(JSON.stringify(req));
 }
 
 function loadUnload(e) {
@@ -183,6 +266,23 @@ function loadUnload(e) {
     var serviceID = e.getAttribute("serviceid")
     if (!serviceID) { return; }
     
+    // Get the select robot
+    var robot = robots.find((x) => (x.serviceID == serviceID));
+
+    if (!robot) {
+        console.log(`Unable to find robot with ID '${serviceID}'`);
+        return;
+    }
+    
+    // Update our items
+    var req = {
+        key: $("#input-api-key").val(),
+        action: "listItemLocations",
+
+    }
+
+    webSocket.send(JSON.stringify(req));
+
     var modal = new bootstrap.Modal(modalSelectItem, {});
     modal.show();
 }
@@ -192,3 +292,7 @@ document.addEventListener("DOMContentLoaded", function() {
     modalSelectLocation = document.getElementById('modal-select-location');
     modalSelectItem     = document.getElementById('modal-select-item');
 });
+
+$('#modal-select-location').on('shown.bs.modal', function () {
+    //$('#myInput').trigger('focus')
+  })

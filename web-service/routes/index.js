@@ -59,6 +59,14 @@ wss.on('connection', function connection(ws) {
 
             // Parse the action the client wants to do
             switch (data.action) {
+                case "listLocations":
+                    listLocations(ws);
+                    break;
+                    
+                case "listRobots":
+                    listRobots(ws);
+                    break;
+
                 case "listItemLocations":
                     // We have to clear the items for the 
                     // client before sending the full list
@@ -79,6 +87,21 @@ wss.on('connection', function connection(ws) {
                     getRobotInformation(ws, data.data);
 
                     break;
+
+                case "moveRobot":
+                    var serviceID = data.data.serviceID;
+                    var locationID = data.data.locationNameOrID;
+                    
+                    warehouseService.MoveRobot({
+                        serviceID: serviceID,
+                        locationNameOrID: locationID
+                    }, (error, response) => {
+                        if (error) {
+                            console.log(`An error occurred moving a robot to ${locationNameOrID}`);
+                            console.error(error);
+                            return;
+                        }
+                    })
 
                 default:
                     break;
