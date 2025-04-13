@@ -28,11 +28,10 @@ let modalSelectItem;
 var selectedRobotID    = "";
 var selectedLocationID = "";
 
-var locations = [];
-
 const ITEMS_RECEIVED_EVENT     = "itemsReceived";
 const ROBOTS_RECEIVED_EVENT    = "robotsReceived";
 const LOCATIONS_RECEIVED_EVENT = "locationsReceived";
+const ACKNOWLEDGED_EVENT       = "acknowledged";
 
 const authenticatedEvent = new Event("authenticated");
 
@@ -70,6 +69,8 @@ function listLocations() {
 }
 
 function listItems(location) {
+    console.log(`getting items for ${location}`);
+
     var req = {
         key:    $("#input-api-key").val(),
         action: "listItemLocations",
@@ -88,6 +89,9 @@ webSocket.onmessage = (event) => {
     var response = JSON.parse(event.data);
     
     // Parse the response from the server
+    // Raise events so appropriate handlers
+    // will deal with the incoming data for
+    // their own needs
     switch (response.type) {
         case "authenticate":
             if (response.result == true) {
@@ -107,39 +111,10 @@ webSocket.onmessage = (event) => {
             break;
 
         case "locations":
-            var location = response.data;
-            var tableLocations = $("#table-locations tbody");
-            
-            // Check if location is already in our list
-            var locationIndex = locations.findIndex((x) => x.locationID == location.locationID);
+            document.dispatchEvent(new CustomEvent(LOCATIONS_RECEIVED_EVENT, {
+                detail: response.data
+            }));
 
-            if (locationIndex > -1) {
-                locations[locationIndex].locationID = location.locationID;
-                locations[locationIndex].locationName = location.locationName;
-                locations[locationIndex].locationItemCount = location.locationItemCount;
-                locations[locationIndex].locationMaxSize = location.locationMaxSize;
-
-                // Update row on table
-                var existingRow = $("#table-locations tbody tr#tr-location-" + location.locationID);
-                existingRow.find("td[type='locationName']").html(location.locationName);
-                var itemCount = location.locationItemCount + "/" + location.locationMaxSize;
-                existingRow.find("td[type='itemCount']").html(itemCount);
-            } else {
-                locations.push(location);
-                
-                // Add new location to table
-                var newLocation = locationRow;
-
-                newLocation = newLocation.replaceAll("__id__", location.locationID);
-                newLocation = newLocation.replaceAll("__name__", location.locationName);
-                var itemCount = location.locationItemCount + "/" + location.locationMaxSize;
-                newLocation = newLocation.replaceAll("__itemCount__", itemCount);
-                tableLocations.append(newLocation);
-            }
-
-            // Always add to the dropdown in the modal
-            $("#select-new-location").append(`<option value="${location.locationID}">${location.locationName}</option>`);
-            
             break;
 
         case "items":
@@ -244,7 +219,6 @@ function selectLocation(location) {
 }
 
 function moveRobot(e) {
-    console.log("Move robot!");
     if (!e) { return; }
     var serviceID = e.getAttribute("serviceid")
     if (!serviceID) { return; }
@@ -254,15 +228,30 @@ function moveRobot(e) {
     // Use modal from bootstrap
 
     // Empty the dropdown in the modal
-    $("#select-new-location").empty();    
+    $("#select-new-location").empty();
     
-    // Update our locations, this will remake the dropdown items
+    // Request all locations
+    // then handle the event when it happens
+    // and populate the drop
     var req = {
         key:    $("#input-api-key").val(),
         action: "listLocations"
     }
 
     webSocket.send(JSON.stringify(req));
+
+    // Update the dropdown when locations come through
+    document.addEventListener(LOCATIONS_RECEIVED_EVENT, function(e) {
+        var locations = e.detail;
+
+        var selectNewLocation = $("#select-new-location");
+        selectNewLocation.empty();
+
+        for (var k = 0; k < locations.length; k++) {
+            var v = locations[k];
+            selectNewLocation.append(`<option value="${v.locationID}">${v.locationName}</option>`);
+        }
+    }, {once: true});
     
     var modal = new bootstrap.Modal(modalSelectLocation, {});
     modal.show();    
@@ -328,13 +317,9 @@ function loadUnload(e) {
             }
 
             webSocket.send(JSON.stringify(req));
-
-            // Refresh our data
-            listRobots();
-            listLocations();
-
             break;
     }
+
 }
 
 function loadItemConfirm() {
@@ -392,3 +377,35 @@ document.addEventListener(ROBOTS_RECEIVED_EVENT, function(e) {
         }
     }
 });
+
+// Every time we get location data lets parse it
+document.addEventListener(LOCATIONS_RECEIVED_EVENT, function(e) {
+    var locations = e.detail;
+    var tableLocations = $("#table-locations tbody");
+    
+    tableLocations.empty();
+
+    for (var k = 0; k < locations.length; k++) {
+        var v = locations[k];
+
+        // Add to table
+        var newLocation = locationRow;
+
+        newLocation = newLocation.replaceAll("__id__", v.locationID);
+        newLocation = newLocation.replaceAll("__name__", v.locationName);
+        var itemCount = v.locationItemCount + "/" + v.locationMaxSize;
+        newLocation = newLocation.replaceAll("__itemCount__", itemCount);
+        tableLocations.append(newLocation);
+    }
+    
+    // Always add to the dropdown in the modal
+    $("#select-new-location").append(`<option value="${location.locationID}">${location.locationName}</option>`);
+});
+
+// Every time our command is acknowledged then lets get refresh data
+document.addEventListener(ACKNOWLEDGED_EVENT, function(e) {
+    listRobots();
+    listLocations();
+    selectRobot(selectedRobotID);
+    listItems(selectedLocationID);
+})

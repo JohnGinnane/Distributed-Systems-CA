@@ -131,11 +131,7 @@ wss.on('connection', function connection(ws) {
                             return;
                         }
 
-                        // ROBOTS
-                        listRobots(ws);
-                
-                        // LOCATIONS
-                        listLocations(ws);
+                        acknowledge();
                     });
 
                     break;
@@ -154,11 +150,7 @@ wss.on('connection', function connection(ws) {
                             return;
                         }
                         
-                        // ROBOTS
-                        listRobots(ws);
-                
-                        // LOCATIONS
-                        listLocations(ws);
+                        acknowledge();
                     });
 
                     break;
@@ -175,11 +167,7 @@ wss.on('connection', function connection(ws) {
                             return;
                         }
                         
-                        // ROBOTS
-                        listRobots(ws);
-                
-                        // LOCATIONS
-                        listLocations(ws)
+                        acknowledge();
                     });
                     
                     break;
@@ -257,26 +245,31 @@ function listRobots(ws) {
 }
 
 function listLocations(ws) {
+    // make list of all locations during stream
+    // then send to web socket client in one go
+    var resp = [];
+
     let listLocationsCall = warehouseService.ListLocations();
 
     listLocationsCall.on("data", (response) => {
         if (!response) { return; }
-
+        resp.push(response);
+    });
+    
+    listLocationsCall.on("end", () => {
+        // After stream is ended send to
+        // web socket client        
         for (let k = 0; k < webSocketClients.length; k++) {
             let v = webSocketClients[k];
 
             if (v.readyState == ws.OPEN) {
-                let resp = JSON.stringify({
+                v.send(JSON.stringify({
                     type: "locations",
-                    data: response
-                });
-
-                v.send(resp);
+                    data: resp
+                }));
             }
         }
     });
-    
-    listLocationsCall.on("end", () => {});
 
     listLocationsCall.on("error", (e) => {
         console.log("Error listing locations:");
@@ -335,6 +328,19 @@ function getRobotInformation(ws, serviceID) {
         
         ws.send(resp);
     });
+}
+
+// Function to acknowledge when a command was ran on the warehouse
+function acknowledge() {    
+    for (var k = 0; k < webSocketClients.length; k++) {
+        var v = webSocketClients[k];
+
+        if (v.readyState == ws.OPEN) {
+            v.send(JSON.stringify({
+                type: "acknowledge"
+            }));
+        }
+    }
 }
 
 module.exports = router;
