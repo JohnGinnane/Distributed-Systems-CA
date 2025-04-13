@@ -22,17 +22,24 @@ const itemRow = `<tr>
     <td>__name__</td>
 </tr>`
 
+// Page-wide variables
 let itemNum = 0;
+let modalSelectLocation;
+let modalSelectItem;
 
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
 
-    var req = {
-        key:    $("#input-api-key").val(),
-        action: "authentication"
-    }
+    // Try to authenticate right away if
+    // API key filled in
+    if ($("#input-api-key").val()) {
+        var req = {
+            key:    $("#input-api-key").val(),
+            action: "authentication"
+        }
 
-    webSocket.send(JSON.stringify(req));
+        webSocket.send(JSON.stringify(req));
+    }
 }
 
 // The server will send back data for:
@@ -128,11 +135,14 @@ webSocket.onerror = (event) => {
     console.error(event);
 }
 
+// When you press authenticate
+// check the API key is valid
 $("#form-api").on("submit", (event) => {
     // Client side JS
     console.log("API Key:", $("#input-api-key").val());
 });
 
+// Get the details of the selected robot
 function selectRobot(robot) {
     var req = {
         key:    $("#input-api-key").val(),
@@ -143,6 +153,7 @@ function selectRobot(robot) {
     webSocket.send(JSON.stringify(req));
 }
 
+// Get the items for the selected 
 function selectLocation(location) {
     var req = {
         key:    $("#input-api-key").val(),
@@ -161,6 +172,9 @@ function moveRobot(e) {
     // Need to get list of locations from server
     // then prompt person what location to move to
     // Use modal from bootstrap
+    
+    var modal = new bootstrap.Modal(modalSelectLocation, {});
+    modal.show();    
 }
 
 function loadUnload(e) {
@@ -169,5 +183,12 @@ function loadUnload(e) {
     var serviceID = e.getAttribute("serviceid")
     if (!serviceID) { return; }
     
-    console.log("Load / Unload: ", serviceID);
+    var modal = new bootstrap.Modal(modalSelectItem, {});
+    modal.show();
 }
+
+// Code to run on page load
+document.addEventListener("DOMContentLoaded", function() {
+    modalSelectLocation = document.getElementById('modal-select-location');
+    modalSelectItem     = document.getElementById('modal-select-item');
+});
