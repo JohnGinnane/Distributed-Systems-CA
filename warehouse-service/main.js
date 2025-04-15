@@ -16,6 +16,8 @@ let locations         = [];
 const MAX_SHELF_SIZE  = 20;
 let robots            = [];
 const API_KEY         = generateNewID(16);
+var public_key        = "";
+var private_key       = "";
 
 console.log("MASTER API KEY: ");
 console.log(API_KEY);
@@ -678,6 +680,7 @@ function controlRobot(call) {
     })
 }
 
+// Function to authenticate a user with API key
 function authenticate(call, callback) {
     const apiKey = call.request.apiKey;
 

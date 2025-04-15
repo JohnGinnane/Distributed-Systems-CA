@@ -5,6 +5,10 @@ const protoLoader    = require("@grpc/proto-loader");
 const path           = require("path");
 const ws             = require("ws");
 const uuid           = require("uuid");
+const crypto         = require('crypto');
+
+const https          = require("https");
+const selfsigned     = require("selfsigned");
 
 let WAREHOUSE_ADDRESS = "127.0.0.1:50001";
 
@@ -12,8 +16,50 @@ const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join
 const warehouseService = new warehouseProto.WarehouseService(WAREHOUSE_ADDRESS, grpc.credentials.createInsecure());
 
 // Set up web socket server to write warehouse data back to page
-const wss = new ws.WebSocketServer({ port: 3001 });
+const SSLCert =  selfsigned.generate(null, { days: 1 });
+const credential = {
+    key: SSLCert.private,
+    cert: SSLCert.cert
+}
+
+const server = https.createServer(credential);
+//server.listen(3001);
+const webSocket = new ws.WebSocketServer(server);
+
 const webSocketClients = [];
+var   PUBLIC_KEY  = "";
+var   PRIVATE_KEY = "";
+
+/******************************
+ * PUBLIC / PRIVATE KEY
+ ******************************/
+crypto.generateKeyPair('rsa', {
+    modulusLength: 4096,
+    publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem'
+    },
+
+    privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem',
+        cipher: 'aes-256-cbc',
+        passphrase: 'warehouseservicepassphrase'
+    }
+  }, (err, publicKey, privateKey) => {
+    // Handle errors and use the generated key pair.
+    if (err) {
+        console.log("Couldn't generate keys!");
+        console.error(err);
+        return;
+    }
+
+    PUBLIC_KEY  = publicKey;
+    PRIVATE_KEY = privateKey;
+
+    console.log(PUBLIC_KEY);
+    console.log(PRIVATE_KEY);
+});
 
 function generateNewID(length) {
     length = length || 4;
@@ -45,12 +91,18 @@ router.get('/', function(req, res, next) {
     });
 });
 
-wss.on('connection', function connection(ws) {
+webSocket.on('connection', function connection(ws) {
     // Attach a unique ID
     if (!ws.id) {
         ws.id = generateNewID(16);
         console.log("New websocket ID:", ws.id);
     }
+
+    // Send them the public key
+    ws.send(JSON.stringify({
+        type: "public_key",
+        public_key: PUBLIC_KEY
+    }));
 
     // This is when the server receives a message from a client
     ws.on('message', function message(req) {

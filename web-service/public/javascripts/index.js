@@ -1,7 +1,9 @@
+//const crypto = require('crypto');
+
 // Immediately open a web socket to the server
 // This allows us to stream async data from web
 // server to the client's page
-const webSocket = new WebSocket("ws://localhost:3001/", "echo-protocol");
+const webSocket = new WebSocket("wss://localhost:3001/", "echo-protocol");
 
 // Template rows for robots and locations
 const robotRow = `<tr id="tr-robot-__id__" onclick="selectRobot('__id__')">
@@ -32,8 +34,19 @@ const ITEMS_RECEIVED_EVENT     = "itemsReceived";
 const ROBOTS_RECEIVED_EVENT    = "robotsReceived";
 const LOCATIONS_RECEIVED_EVENT = "locationsReceived";
 const ACKNOWLEDGED_EVENT       = "acknowledged";
+var   SERVER_PUBLIC_KEY        = ""; // Set later when web socket connects
 
-const authenticatedEvent = new Event("authenticated");
+const authenticatedEvent       = new Event("authenticated");
+
+function wsSend(data) {
+    // Convert object to string
+    var strData = JSON.stringify(data);
+
+    // Encrypt with server key
+    var encrypted = Crypto.publicEncrypt(SERVER_PUBLIC_KEY, strData);
+
+    console.log(encrypted);
+}
 
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
@@ -101,6 +114,11 @@ webSocket.onmessage = (event) => {
                 console.log("Unable to authenticate API key");
             }
 
+            break;
+
+        // When the web socket connects we expect the server's public key
+        case "public_key":
+            const SERVER_PUBLIC_KEY = response.public_key;
             break;
 
         // When the server acknowledges our command lets raise an event
