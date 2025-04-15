@@ -3,7 +3,7 @@
 // Immediately open a web socket to the server
 // This allows us to stream async data from web
 // server to the client's page
-const webSocket = new WebSocket('wss://localhost:3001', 'echo-protocol');
+const webSocket = new WebSocket('wss://localhost:3001', null, null, null, {rejectUnauthorized: false});
 
 // Template rows for robots and locations
 const robotRow = `<tr id="tr-robot-__id__" onclick="selectRobot('__id__')">

@@ -55,6 +55,7 @@ module.exports = app;
 const grpc           = require("@grpc/grpc-js");
 const protoLoader    = require("@grpc/proto-loader");
 const ws             = require("ws");
+const fs             = require('fs');
 // const wss            = require("wss");
 const uuid           = require("uuid");
 const https          = require("https");
@@ -68,16 +69,30 @@ const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join
 const warehouseService = new warehouseProto.WarehouseService(WAREHOUSE_ADDRESS, grpc.credentials.createInsecure());
 
 // Set up web socket server to write warehouse data back to page
+// const credential = {
+//     key: fs.readFileSync('localhost.key'),
+//     cert: fs.readFileSync('localhost.crt')
+// }
+
 const SSLCert =  selfsigned.generate(null, { days: 1 });
 const credential = {
     key: SSLCert.private,
     cert: SSLCert.cert
 }
 
-const httpsServer = https.createServer(credential, (e) => {
-    //console.log(e);
-    console.log("HTTPS Server")
-}).listen(3001);
+console.log(credential);
+
+const httpsServer = https.createServer(credential, (req, res) => {
+    console.log("HTTPS Server");
+});
+
+httpsServer.on('error', (err) => {
+    console.error(err)
+});
+
+httpsServer.listen(3001, () =>  {
+    console.log('HTTPS running on port 3001')
+});
 
 const webSocket = new ws.Server({
     server: httpsServer
@@ -111,7 +126,7 @@ webSocket.on('connection', function connection(ws) {
         ws.id = generateNewID(16);
         console.log("New websocket ID:", ws.id);
     }
-    
+
     // This is when the server receives a message from a client
     ws.on('message', function message(req) {
         try {
