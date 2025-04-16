@@ -208,6 +208,8 @@ function moveRobot(serviceID, locationNameOrID) {
     if (!locationNameOrID) {
         locationNameOrID = readlineSync.question("What location do you want to send the robot to? ");
     }
+    
+    console.log(`Moving robot ${serviceID} to ${locationNameOrID}...`);
 
     warehouseService.MoveRobot({
         serviceID: serviceID,
@@ -218,6 +220,8 @@ function moveRobot(serviceID, locationNameOrID) {
             console.error(error);
             return;
         }
+
+        console.log(`Moved robot ${serviceID} to ${locationNameOrID}`);
     });
 }
 
@@ -230,6 +234,8 @@ function loadItem(serviceID, itemName) {
         itemName = readlineSync.question("What item do you want to load? ");
     }
 
+    console.log(`Loading ${itemName} onto ${serviceID}...`);
+
     warehouseService.LoadItem({
         serviceID: serviceID,
         itemName:  itemName
@@ -239,6 +245,8 @@ function loadItem(serviceID, itemName) {
             console.error(error);
             return;
         }
+
+        console.log(`Loaded ${itemName} onto ${serviceID}`);    
     });
 }
 
@@ -246,6 +254,8 @@ function unloadItem(serviceID) {
     if (!serviceID) {
         serviceID = readlineSync.question("Enter robot service ID: ");
     }
+
+    console.log(`Unloading ${itemName} from ${serviceID}...`);
 
     warehouseService.UnloadItem({
         serviceID: serviceID
@@ -255,6 +265,8 @@ function unloadItem(serviceID) {
             console.error(error);
             return;
         }
+
+        console.log(`Unloaded ${itemName} from ${serviceID}...`);    
     });
 }
 
