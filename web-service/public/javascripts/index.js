@@ -176,6 +176,8 @@ webSocket.onmessage = (event) => {
                 $("#button-load-unload").html("Load");
             }
             
+            setHighlights();
+
             break
 
         default: 
@@ -207,6 +209,15 @@ function selectRobot(robot) {
     webSocket.send(JSON.stringify(req));
 }
 
+function setHighlights() {
+    // Unhighlight any other rows first
+    $("#table-robots tbody").find("tr").removeClass("table-active");
+    $("#table-locations tbody").find("tr").removeClass("table-active");
+
+    $("#table-robots tbody").find("tr[id='tr-robot-" + selectedRobotID + "']").addClass("table-active");
+    $("#table-locations tbody").find("tr[id='tr-location-" + selectedLocationID + "']").addClass("table-active");        
+}
+
 // Get the items for the selected 
 function selectLocation(location) {
     selectedLocationID = location;
@@ -229,6 +240,8 @@ function selectLocation(location) {
             newItem = newItem.replace("__name__", v);
             tableItems.append(newItem);
         }
+
+        setHighlights();
     }, {once: true});
 }
 
@@ -389,6 +402,8 @@ document.addEventListener(ROBOTS_RECEIVED_EVENT, function(e) {
             }
         }
     }
+
+    setHighlights();
 });
 
 // Every time we get location data lets parse it
@@ -413,6 +428,8 @@ document.addEventListener(LOCATIONS_RECEIVED_EVENT, function(e) {
     
     // Always add to the dropdown in the modal
     $("#select-new-location").append(`<option value="${location.locationID}">${location.locationName}</option>`);
+
+    setHighlights();
 });
 
 // Every time our command is acknowledged then lets get refresh data
