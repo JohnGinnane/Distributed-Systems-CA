@@ -42,16 +42,6 @@ app.use(function(err, req, res, next) {
 
 module.exports = app;
 
-
-
-
-
-
-
-
-
-
-
 const grpc           = require("@grpc/grpc-js");
 const protoLoader    = require("@grpc/proto-loader");
 const ws             = require("ws");
@@ -68,19 +58,11 @@ let WAREHOUSE_ADDRESS = "127.0.0.1:50001";
 const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
 const warehouseService = new warehouseProto.WarehouseService(WAREHOUSE_ADDRESS, grpc.credentials.createInsecure());
 
-// Set up web socket server to write warehouse data back to page
-// const credential = {
-//     key: fs.readFileSync('localhost.key'),
-//     cert: fs.readFileSync('localhost.crt')
-// }
-
 const SSLCert =  selfsigned.generate(null, { days: 1 });
 const credential = {
     key: SSLCert.private,
     cert: SSLCert.cert
 }
-
-console.log(credential);
 
 const httpsServer = https.createServer(credential, (req, res) => {
     console.log("HTTPS Server");
@@ -395,7 +377,7 @@ function getRobotInformation(ws, serviceID) {
             console.error(error);
             return;
         }
-
+        
         var resp = JSON.stringify({
             type: "robot",
             data: response
