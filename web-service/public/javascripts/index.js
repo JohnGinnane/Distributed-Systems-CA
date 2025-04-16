@@ -25,10 +25,10 @@ const itemRow = `<tr>
 </tr>`
 
 // Page-wide variables
-let modalSelectLocation;
-let modalSelectItem;
-var selectedRobotID    = "";
-var selectedLocationID = "";
+let   modalSelectLocation;
+let   modalSelectItem;
+var   selectedRobotID          = "";
+var   selectedLocationID       = "";
 
 const ITEMS_RECEIVED_EVENT     = "itemsReceived";
 const ROBOTS_RECEIVED_EVENT    = "robotsReceived";
@@ -36,31 +36,12 @@ const LOCATIONS_RECEIVED_EVENT = "locationsReceived";
 const ACKNOWLEDGED_EVENT       = "acknowledged";
 var   SERVER_PUBLIC_KEY        = ""; // Set later when web socket connects
 
-const authenticatedEvent       = new Event("authenticated");
-
-function wsSend(data) {
-    // Convert object to string
-    var strData = JSON.stringify(data);
-
-    // Encrypt with server key
-    var encrypted = Crypto.publicEncrypt(SERVER_PUBLIC_KEY, strData);
-
-    console.log(encrypted);
-}
-
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
 
     // Try to authenticate right away if
     // API key filled in
-    authenticate();
-
-    // Add event for when authenticate completes
-    document.addEventListener("authenticated", function() {
-        listRobots();
-        listLocations();
-    }, {once: true});
-
+    tryAuthenticate();
 }
 
 function listRobots() {
@@ -93,6 +74,45 @@ function listItems(location) {
     webSocket.send(JSON.stringify(req));
 }
 
+function tryAuthenticate() {
+    if ($("#input-api-key").val()) {
+        var req = {
+            key:    $("#input-api-key").val(),
+            action: "authenticate"
+        }
+
+        webSocket.send(JSON.stringify(req));
+    }
+}
+
+// Authenticate API key
+function authenticate(result) {
+    // Clear the existing data first
+    $("#table-robots tbody").empty();
+    $("#table-locations tbody").empty();
+    $("#table-items tbody").empty();
+
+    $("#h5-robot-id").empty();
+    $("#h5-robot-location").empty();
+    $("#h5-robot-held-item").empty();
+    $("#h5-robot-status").empty();
+    $("#button-load-unload").html("Load");
+    $("#button-load-unload").attr("serviceID", "");
+    $("#button-move").attr("serviceID", "");
+
+    if (result == true) {
+        console.log("Successfully authenticated with API key");
+        listRobots();
+        listLocations();
+    } else {
+        console.log("Unable to authenticate API key");
+
+        var toasterPopUpElement = document.getElementById('div-toaster-popup');
+        var toasterPopUp = bootstrap.Toast.getInstance(toasterPopUpElement);
+        toasterPopUp.show();
+    }
+}
+
 // The server will send back data for:
 //   1. Robots
 //   2. Locations
@@ -107,18 +127,7 @@ webSocket.onmessage = (event) => {
     // their own needs
     switch (response.type) {
         case "authenticate":
-            if (response.result == true) {
-                console.log("Successfully authenticated with API key");
-                document.dispatchEvent(authenticatedEvent);
-            } else {
-                console.log("Unable to authenticate API key");
-            }
-
-            break;
-
-        // When the web socket connects we expect the server's public key
-        case "public_key":
-            const SERVER_PUBLIC_KEY = response.public_key;
+            authenticate(response.result);
             break;
 
         // When the server acknowledges our command lets raise an event
@@ -182,26 +191,8 @@ webSocket.onerror = (event) => {
 // check the API key is valid
 $("#form-api").on("submit", (event) => {
     event.preventDefault();
-    authenticate();
-
-    // Add event for when authenticate completes
-    document.addEventListener("authenticated", function() {
-        listRobots();
-        listLocations();
-    }, {once: true});
+    tryAuthenticate();
 });
-
-// Authenticate API key
-function authenticate() {
-    if ($("#input-api-key").val()) {
-        var req = {
-            key:    $("#input-api-key").val(),
-            action: "authenticate"
-        }
-
-        webSocket.send(JSON.stringify(req));
-    }
-}
 
 // Get the details of the selected robot
 function selectRobot(robot) {
@@ -371,7 +362,6 @@ document.addEventListener("DOMContentLoaded", function() {
 document.addEventListener(ROBOTS_RECEIVED_EVENT, function(e) {
     var robots = e.detail;
     var tableRobots = $("#table-robots tbody");
-
     tableRobots.empty();
 
     for (var k = 0; k < robots.length; k++) {
@@ -450,4 +440,10 @@ document.addEventListener(ACKNOWLEDGED_EVENT, function(e) {
             tableItems.append(newItem);
         }
     }, {once: true});
+});
+
+// Initialise toaster popup(s)
+var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+var toastList = toastElList.map(function (toastEl) {
+  return new bootstrap.Toast(toastEl)
 });

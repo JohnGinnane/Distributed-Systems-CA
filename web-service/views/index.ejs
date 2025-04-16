@@ -33,7 +33,7 @@
                             <div class="col align-items-center text-center">API Key:</div>
                             <form id="form-api" class="col-10">
                                 <input id="input-api-key" class="col-10" name="key" type="text" value="<%= api_key %>"/>
-                                <input id="input-submit-api" class="col m-2 btn btn-primary" type="submit" onclick="authenticate()" value="Authenticate"/>
+                                <input id="input-submit-api" class="col m-2 btn btn-primary" type="submit" value="Authenticate"/>
                             </form>
                         </h3>
                     </div>
@@ -202,6 +202,18 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     </div>   
                 </div>                  
+            </div>
+        </div>
+
+        <!-- Toaster Popup -->
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div id="div-toaster-popup" class="toast hide bg-warning" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body fw-bold">
+                        API key is not valid!
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
             </div>
         </div>
     </body>
