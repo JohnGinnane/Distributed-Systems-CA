@@ -1,10 +1,3 @@
-//const crypto = require('crypto');
-
-// Immediately open a web socket to the server
-// This allows us to stream async data from web
-// server to the client's page
-const webSocket = new WebSocket('wss://localhost:3001', null, null, null, {rejectUnauthorized: false});
-
 // Template rows for robots and locations
 const robotRow = `<tr id="tr-robot-__id__" onclick="selectRobot('__id__')">
     <th scope="row">__id__</th>
@@ -36,6 +29,11 @@ const LOCATIONS_RECEIVED_EVENT = "locationsReceived";
 const ACKNOWLEDGED_EVENT       = "acknowledged";
 var   SERVER_PUBLIC_KEY        = ""; // Set later when web socket connects
 
+// Immediately open a web socket to the server
+// This allows us to stream async data from web
+// server to the client's page
+const webSocket = new WebSocket('wss://localhost:3001', null, null, null, {rejectUnauthorized: false});
+
 webSocket.onopen = (event) => {
     console.log("Web socket opened!");
 
@@ -44,6 +42,7 @@ webSocket.onopen = (event) => {
     tryAuthenticate();
 }
 
+// Make call to server to list robots
 function listRobots() {
     var req = {
         key:    $("#input-api-key").val(),
@@ -53,6 +52,7 @@ function listRobots() {
     webSocket.send(JSON.stringify(req));
 }
 
+// Make call to server to list locations
 function listLocations() {
     var req = {
         key: $("#input-api-key").val(),
@@ -62,6 +62,7 @@ function listLocations() {
     webSocket.send(JSON.stringify(req));
 }
 
+// Make call to server to list location's items
 function listItems(location) {
     console.log(`getting items for ${location}`);
 
@@ -74,6 +75,21 @@ function listItems(location) {
     webSocket.send(JSON.stringify(req));
 }
 
+// Get the details of the selected robot
+function selectRobot(robot) {
+    selectedRobotID = robot;
+
+    var req = {
+        key:    $("#input-api-key").val(),
+        action: "getRobotInformation",
+        data:   selectedRobotID
+    }
+
+    webSocket.send(JSON.stringify(req));
+}
+
+// Make a call to try to authenticate the 
+// API key with the server
 function tryAuthenticate() {
     if ($("#input-api-key").val()) {
         var req = {
@@ -85,7 +101,7 @@ function tryAuthenticate() {
     }
 }
 
-// Authenticate API key
+// Handle the result of authentication
 function authenticate(result) {
     // Clear the existing data first
     $("#table-robots tbody").empty();
@@ -100,11 +116,13 @@ function authenticate(result) {
     $("#button-load-unload").attr("serviceID", "");
     $("#button-move").attr("serviceID", "");
 
+    // If key was good then get details from server
     if (result == true) {
         console.log("Successfully authenticated with API key");
         listRobots();
         listLocations();
     } else {
+        // Otherwise show toaster popup to inform the user
         console.log("Unable to authenticate API key");
 
         var toasterPopUpElement = document.getElementById('div-toaster-popup');
@@ -124,7 +142,8 @@ webSocket.onmessage = (event) => {
     // Parse the response from the server
     // Raise events so appropriate handlers
     // will deal with the incoming data for
-    // their own needs
+    // their own needs, pass in the data
+    // from the response to those custom events
     switch (response.type) {
         case "authenticate":
             authenticate(response.result);
@@ -196,19 +215,7 @@ $("#form-api").on("submit", (event) => {
     tryAuthenticate();
 });
 
-// Get the details of the selected robot
-function selectRobot(robot) {
-    selectedRobotID = robot;
-
-    var req = {
-        key:    $("#input-api-key").val(),
-        action: "getRobotInformation",
-        data:   selectedRobotID
-    }
-
-    webSocket.send(JSON.stringify(req));
-}
-
+// Highlighted selected rows on tables
 function setHighlights() {
     // Unhighlight any other rows first
     $("#table-robots tbody").find("tr").removeClass("table-active");
@@ -218,7 +225,7 @@ function setHighlights() {
     $("#table-locations tbody").find("tr[id='tr-location-" + selectedLocationID + "']").addClass("table-active");        
 }
 
-// Get the items for the selected 
+// Get the items for the selected location
 function selectLocation(location) {
     selectedLocationID = location;
     listItems(selectedLocationID);
@@ -245,6 +252,8 @@ function selectLocation(location) {
     }, {once: true});
 }
 
+// Move the selected robot to the specified
+// location, called by button onclick
 function moveRobot(e) {
     if (!e) { return; }
     var serviceID = e.getAttribute("serviceid")
@@ -278,12 +287,14 @@ function moveRobot(e) {
             var v = locations[k];
             selectNewLocation.append(`<option value="${v.locationID}">${v.locationName}</option>`);
         }
-    }, {once: true});
+    }, {once: true}); // Only handle this event once
     
     var modal = new bootstrap.Modal(modalSelectLocation, {});
     modal.show();    
 }
 
+// Called by "Move" button on the 'Move Robot'
+// modal that shows up when moving a robot
 function moveRobotConfirm() {
     // Get selected location and robot and move it
     var robotID = $("#h5-robot-id").html();
@@ -301,6 +312,7 @@ function moveRobotConfirm() {
     webSocket.send(JSON.stringify(req));
 }
 
+// Called by button click on page
 function loadUnload(e) {
     // Extract the robot ID from the element's "serviceID" attribute
     if (!e) { return; }
@@ -309,6 +321,9 @@ function loadUnload(e) {
     // Check if we're loading or unloading
     switch (e.textContent.trim().toLowerCase()) {
         case "load":
+            // If loading then get the latest
+            // items for the location of the
+            // selected robot
             var req = {
                 key:    $("#input-api-key").val(),
                 action: "listItemLocations",
@@ -317,6 +332,8 @@ function loadUnload(e) {
         
             webSocket.send(JSON.stringify(req));
 
+            // Handle when that event comes back once
+            // Populate the dropdown of the modal
             document.addEventListener(ITEMS_RECEIVED_EVENT, function(e) {
                 var items = e.detail;
                 
@@ -329,12 +346,15 @@ function loadUnload(e) {
                 }
             }, {once: true});
 
+            // Show modal popup
             var modal = new bootstrap.Modal(modalSelectItem, {});
             modal.show();
             
             break;
         
         case "unload":
+            // Otherwise just unload the item from the
+            // selected robot (i.e. at its current location)
             var req = {
                 key: $("#input-api-key").val(),
                 action: "unloadItem",
@@ -349,6 +369,7 @@ function loadUnload(e) {
 
 }
 
+// Called by button on the load item modal popup
 function loadItemConfirm() {
     var robotID = $("#h5-robot-id").html();
     var itemName = $("#select-load-item").find(":selected").text();
@@ -371,7 +392,7 @@ document.addEventListener("DOMContentLoaded", function() {
     modalSelectItem     = document.getElementById('modal-select-item');
 });
 
-// Every time we get robot data lets parse it
+// Every time we get robots data lets parse it
 document.addEventListener(ROBOTS_RECEIVED_EVENT, function(e) {
     var robots = e.detail;
     var tableRobots = $("#table-robots tbody");
@@ -406,7 +427,7 @@ document.addEventListener(ROBOTS_RECEIVED_EVENT, function(e) {
     setHighlights();
 });
 
-// Every time we get location data lets parse it
+// Every time we get locations data lets parse it
 document.addEventListener(LOCATIONS_RECEIVED_EVENT, function(e) {
     var locations = e.detail;
     var tableLocations = $("#table-locations tbody");
@@ -432,7 +453,7 @@ document.addEventListener(LOCATIONS_RECEIVED_EVENT, function(e) {
     setHighlights();
 });
 
-// Every time our command is acknowledged then lets get refresh data
+// Every time anyone's command is acknowledged then lets get refresh data
 document.addEventListener(ACKNOWLEDGED_EVENT, function(e) {
     listRobots();
     listLocations();

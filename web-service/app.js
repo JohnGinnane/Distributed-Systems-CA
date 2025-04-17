@@ -42,44 +42,18 @@ app.use(function(err, req, res, next) {
 
 module.exports = app;
 
+// Warehouse Project Serverside Web Code
 const grpc           = require("@grpc/grpc-js");
 const protoLoader    = require("@grpc/proto-loader");
 const ws             = require("ws");
-const fs             = require('fs');
-// const wss            = require("wss");
 const uuid           = require("uuid");
 const https          = require("https");
 const selfsigned     = require("selfsigned");
-
-
-const webSocketClients = [];
-let WAREHOUSE_ADDRESS = "127.0.0.1:50001";
-
-const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
-const warehouseService = new warehouseProto.WarehouseService(WAREHOUSE_ADDRESS, grpc.credentials.createInsecure());
-
-const SSLCert =  selfsigned.generate(null, { days: 1 });
-const credential = {
-    key: SSLCert.private,
-    cert: SSLCert.cert
-}
 
 function log(str) {
     var today  = new Date();
     console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
 }
-
-httpsServer.on('error', (err) => {
-    console.error(err)
-});
-
-httpsServer.listen(3001, () =>  {
-    log('HTTPS running on port 3001')
-});
-
-const webSocket = new ws.Server({
-    server: httpsServer
-});
 
 function generateNewID(length) {
     length = length || 4;
@@ -100,6 +74,29 @@ function generateNewID(length) {
     return newID;
 }
 
+const webSocketClients = [];
+let WAREHOUSE_ADDRESS = "127.0.0.1:50001";
+
+const warehouseProto = grpc.loadPackageDefinition(protoLoader.loadSync(path.join(__dirname, "../protos/warehouse.proto"))).warehouse;
+const warehouseService = new warehouseProto.WarehouseService(WAREHOUSE_ADDRESS, grpc.credentials.createInsecure());
+
+// Create self signed cert for use by HTTPS
+const SSLCert =  selfsigned.generate(null, { days: 1 });
+const credential = {
+    key: SSLCert.private,
+    cert: SSLCert.cert
+}
+
+// Start HTTPS server for secure web sockets
+const httpsServer = https.createServer(credential);
+
+httpsServer.on('error', (err) => { console.error(err) });
+
+httpsServer.listen(3001, () =>  { log('HTTPS running on port 3001') });
+
+const webSocket = new ws.Server({ server: httpsServer });
+
+// When we receive a new connection from a client
 webSocket.on('connection', function connection(ws) {
     // Attach a unique ID
     if (!ws.id) {
@@ -110,6 +107,7 @@ webSocket.on('connection', function connection(ws) {
     // This is when the server receives a message from a client
     ws.on('message', function message(req) {
         try {
+            // Try to identify API key and action
             var data = JSON.parse(req);
             var apiKey = data.key;
             var action = data.action;
@@ -120,7 +118,9 @@ webSocket.on('connection', function connection(ws) {
                 log(`Websocket tried to call a function without authenticating!`);
                 return;
             }
-
+            
+            // At this point the web socket successfully authenticated with API key
+            // OR they just want to authenticate a key
             // Parse the action the client wants to do
             switch (action) {
                 case "authenticate":
@@ -236,8 +236,9 @@ webSocket.on('connection', function connection(ws) {
         }
     });
 
+    // Event when the websocket is closed
     ws.on("close", (code, reason) => {
-        // Remove this from the list of clients
+        // Remove this websocket from the list of clients
         if (ws.id) {
             for (let k = webSocketClients.length-1; k >= 0; k--) {
                 let v = webSocketClients[k];
@@ -249,6 +250,7 @@ webSocket.on('connection', function connection(ws) {
         }
     });
 
+    // Add the new websocket to our list of active clients
     let found = false;
 
     // Check if this socket is already in our list
@@ -333,6 +335,9 @@ function listLocations(ws) {
 }
 
 function listItems(ws, locationNameOrID) {
+    // Make list of a location's items using
+    // stream, then push to websocket client in
+    // one go
     var resp = [];
 
     let listItemsCall = warehouseService.ListLocationItems({
@@ -386,6 +391,7 @@ function getRobotInformation(ws, serviceID) {
 }
 
 // Function to acknowledge when a command was ran on the warehouse
+// This causes all web socket clients to ask for updates
 function acknowledge() {    
     for (var k = 0; k < webSocketClients.length; k++) {
         var v = webSocketClients[k];
