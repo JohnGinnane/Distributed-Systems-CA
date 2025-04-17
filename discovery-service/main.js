@@ -16,6 +16,11 @@ let services = [];
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
+function log(str) {
+    var today  = new Date();
+    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
+}
+
 function generateNewID() {
     let newID = "";
 
@@ -122,7 +127,7 @@ const registerService = (call, callback) => {
     // Generate a unique ID for new service
     let newID = generateNewID();
 
-    console.log(`Registering service '${serviceName}' at ${serviceAddress} with ID ${newID}`);
+    log(`Registering service '${serviceName}' at ${serviceAddress} with ID ${newID}`);
 
     // Store in services array
     services.push({
@@ -143,7 +148,7 @@ const unregisterService = (call, callback) => {
 
     // Remove from services array
     if (serviceIndex > -1) {
-        console.log(`Service ID ${services[serviceIndex].serviceID} has been unregistered`);
+        log(`Service ID ${services[serviceIndex].serviceID} has been unregistered`);
         services.splice(serviceIndex, 1);
     }
 }
@@ -159,7 +164,7 @@ server.addService(discoveryProto.DiscoveryService.service, {
 });
 
 server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
-    console.log("Discovery Service running on " + address());
+    log("Discovery Service running on " + address());
 
     // Register the discovery service
     serviceID = generateNewID();

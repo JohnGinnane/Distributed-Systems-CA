@@ -64,23 +64,21 @@ const credential = {
     cert: SSLCert.cert
 }
 
-const httpsServer = https.createServer(credential, (req, res) => {
-    console.log("HTTPS Server");
-});
+function log(str) {
+    var today  = new Date();
+    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
+}
 
 httpsServer.on('error', (err) => {
     console.error(err)
 });
 
 httpsServer.listen(3001, () =>  {
-    console.log('HTTPS running on port 3001')
+    log('HTTPS running on port 3001')
 });
 
 const webSocket = new ws.Server({
     server: httpsServer
-}, (e) => {
-    //console.log(e);
-    console.log("Web Socker Server")
 });
 
 function generateNewID(length) {
@@ -106,7 +104,7 @@ webSocket.on('connection', function connection(ws) {
     // Attach a unique ID
     if (!ws.id) {
         ws.id = generateNewID(16);
-        console.log("New websocket ID:", ws.id);
+        log(`New websocket ID: ${ws.id}`);
     }
 
     // This is when the server receives a message from a client
@@ -119,7 +117,7 @@ webSocket.on('connection', function connection(ws) {
             // Make sure the socket has authenticated with API key first
             // or if they are trying to authenticate then let them
             if (action != "authenticate" && ws.authenticated && ws.apiKey != apiKey) {
-                console.log(`Websocket tried to call a function without authenticating!`);
+                log(`Websocket tried to call a function without authenticating!`);
                 return;
             }
 
@@ -131,7 +129,7 @@ webSocket.on('connection', function connection(ws) {
                         apiKey: apiKey
                     }, (error, response) => {
                         if (error) {
-                            console.log(`Error authenticating API key '${apiKey}'`);
+                            log(`Error authenticating API key '${apiKey}'`);
                             console.error(error);
                             return;
                         }
@@ -183,7 +181,7 @@ webSocket.on('connection', function connection(ws) {
                         locationNameOrID: locationID
                     }, (error, response) => {
                         if (error) {
-                            console.log(`An error occurred moving a robot to ${locationNameOrID}`);
+                            log(`An error occurred moving a robot to ${locationNameOrID}`);
                             console.error(error);
                             return;
                         }
@@ -202,7 +200,7 @@ webSocket.on('connection', function connection(ws) {
                         itemName:  itemName
                     }, (error, response) => {
                         if (error) {
-                            console.log(`An error occurred loading '${itemName}' onto robot ${serviceID}: `);
+                            log(`An error occurred loading '${itemName}' onto robot ${serviceID}: `);
                             console.error(error);
                             return;
                         }
@@ -219,7 +217,7 @@ webSocket.on('connection', function connection(ws) {
                         serviceID: serviceID
                     }, (error, response) => {
                         if (error) {
-                            console.log(`An error occurred unloading robot ${serviceID}: `);
+                            log(`An error occurred unloading robot ${serviceID}: `);
                             console.error(error);
                             return;
                         }
@@ -233,7 +231,7 @@ webSocket.on('connection', function connection(ws) {
                     break;
             }
         } catch (ex) {
-            console.log("Error parsing incoming message:");
+            log("Error parsing incoming message:");
             console.error(ex);
         }
     });
@@ -296,7 +294,7 @@ function listRobots(ws) {
     });
 
     listRobotsCall.on("error", (e) => {
-        console.log("Error listing robots:");
+        log("Error listing robots:");
         console.error(e);
     });
 }
@@ -329,7 +327,7 @@ function listLocations(ws) {
     });
 
     listLocationsCall.on("error", (e) => {
-        console.log("Error listing locations:");
+        log("Error listing locations:");
         console.error(e);
     });
 }
@@ -363,7 +361,7 @@ function listItems(ws, locationNameOrID) {
     });
 
     listItemsCall.on("error", (e) => {
-        console.log("Error listing items:");
+        log("Error listing items:");
         console.error(e);
     });
 }
@@ -373,7 +371,7 @@ function getRobotInformation(ws, serviceID) {
         serviceID: serviceID
     }, (error, response) => {
         if (error) {
-            console.log(`An error occurred getting status of robot ${serviceID}: `);
+            log(`An error occurred getting status of robot ${serviceID}: `);
             console.error(error);
             return;
         }

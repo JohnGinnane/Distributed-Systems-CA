@@ -19,8 +19,13 @@ const API_KEY         = generateNewID(16);
 var public_key        = "";
 var private_key       = "";
 
-console.log("MASTER API KEY: ");
-console.log(API_KEY);
+function log(str) {
+    var today  = new Date();
+    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
+}
+
+log("MASTER API KEY: ");
+log(API_KEY);
 
 function generateNewID(length) {
     length = length || 4;
@@ -160,7 +165,7 @@ function addToLocation(call, callback) {
 
             add(loc.ID, itemName);
         } catch (ex) {
-            console.log("A non-fatal error occurred trying to add an item: ");
+            log("A non-fatal error occurred trying to add an item: ");
             console.error(ex);
     
             // Catch exception and handle
@@ -195,7 +200,7 @@ function moveRobot(call, callback) {
         locationNameOrID: moveRobotRequest.locationNameOrID
     }, (error, response) => {
         if (error) {
-            console.log(`Error moving robot to ${moveRobotRequest.locationNameOrID}`);
+            log(`Error moving robot to ${moveRobotRequest.locationNameOrID}`);
             console.error(error);
 
             callback({
@@ -225,7 +230,7 @@ function addRobot(call, callback) {
 
     try {
         robot.Service = new robotProto.RobotService(robot.address, grpc.credentials.createInsecure());
-        console.log(`Robot ${robot.serviceID} has just come online`);
+        log(`Robot ${robot.serviceID} has just come online`);
         robots.push(robot);
 
         // Move the robot to loading bay
@@ -233,12 +238,12 @@ function addRobot(call, callback) {
             locationNameOrID: "loading_bay"
         }, (error, response) => {
             if (error) {
-                console.log("Error moving robot to loading_bay");
+                log("Error moving robot to loading_bay");
                 console.error(error);
             }
         });
     } catch (ex) {
-        console.log("Error trying to add robot:");
+        log("Error trying to add robot:");
         console.error(ex);
         callback({
             code:    grpc.status.INTERNAL,
@@ -262,7 +267,7 @@ function removeRobot(call, callback) {
     }
 
     const robot = robots[robotIndex];
-    console.log(`Robot ${robot.serviceID} went offline. It was last seen at ${robot.location}`);
+    log(`Robot ${robot.serviceID} went offline. It was last seen at ${robot.location}`);
     robots.splice(robotIndex, 1);
 }
 
@@ -282,7 +287,7 @@ function setRobotStatus(call, callback) {
 
     // Report any changes to location
     if (robots[robotIndex].location != reportStatusRequest.location) {
-        console.log(`Robot ${robots[robotIndex].serviceID} is now at ${reportStatusRequest.location}`);
+        log(`Robot ${robots[robotIndex].serviceID} is now at ${reportStatusRequest.location}`);
     }
 
     robots[robotIndex].status   = reportStatusRequest.status;
@@ -333,7 +338,7 @@ function removeFromLocation(call, callback) {
 
             remove(loc.ID, itemName);
         } catch (ex) {
-            console.log("A non-fatal error occurred trying to remove an item: ");
+            log("A non-fatal error occurred trying to remove an item: ");
             console.error(ex);
     
             // Catch exception and handle
@@ -429,7 +434,7 @@ function loadItem(call, callback) {
         itemName: itemName
     }, (error, response) => {
         if (error) {
-            console.log(`Error loading item onto ${robot.serviceID}`);
+            log(`Error loading item onto ${robot.serviceID}`);
             console.error(error);
             return;
         }
@@ -501,7 +506,7 @@ function unloadItem(call, callback) {
 
     robot.Service.UnloadItem({ }, (error, response) => {
         if (error) {
-            console.log(`Error unloading item from ${robot.serviceID}`);
+            log(`Error unloading item from ${robot.serviceID}`);
             console.error(error);
             callback({
                 code: grpc.status.INTERNAL,
@@ -555,7 +560,7 @@ function controlRobot(call) {
                         try {
                             if (error) {
                                 // Serverside error logging
-                                console.log(`Error moving robot to ${value}`);
+                                log(`Error moving robot to ${value}`);
                                 console.error(error);
 
                                 // Clientside error logging
@@ -569,7 +574,7 @@ function controlRobot(call) {
                             controlRobotResponse.message = `${serviceID} moved to ${response.locationNameOrID}`;
                             call.write(controlRobotResponse);
                         } catch (ex) {                            
-                            console.log("An error occurred while controlling a robot: ");
+                            log("An error occurred while controlling a robot: ");
                             console.error(ex);
                         }
                     });
@@ -582,7 +587,7 @@ function controlRobot(call) {
                         try {
                             if (error) {
                                 // Serverside error logging
-                                console.log(`Error loading item onto ${robot.serviceID}`);
+                                log(`Error loading item onto ${robot.serviceID}`);
                                 console.error(error);
 
                                 // Clientside error logging
@@ -596,7 +601,7 @@ function controlRobot(call) {
 
                             // make sure location exists
                             if (!location) {
-                                console.log(`Location '${robot.location}' could not be found!`);
+                                log(`Location '${robot.location}' could not be found!`);
 
                                 controlRobotResponse.message = `Error loading item onto ${robot.serviceID}`;
                                 call.write(controlRobotResponse);
@@ -608,7 +613,7 @@ function controlRobot(call) {
 
                             // Make sure item exists
                             if (itemIndex < 0) {
-                                console.log(`Item '${value}' could not be found at '${robot.location}'`);
+                                log(`Item '${value}' could not be found at '${robot.location}'`);
 
                                 controlRobotResponse.message = `Error loading item onto ${robot.serviceID}`;
                                 call.write(controlRobotResponse);
@@ -621,7 +626,7 @@ function controlRobot(call) {
                             controlRobotResponse.message = `${serviceID} loaded ${value}`;
                             call.write(controlRobotResponse);
                         } catch (ex) {
-                            console.log("An error occurred while controlling a robot: ");
+                            log("An error occurred while controlling a robot: ");
                             console.error(ex);
                         }
                     });
@@ -632,7 +637,7 @@ function controlRobot(call) {
                         try {
                             if (error) {
                                 // Serverside error logging
-                                console.log(`Error unloading item from ${robot.serviceID}`);
+                                log(`Error unloading item from ${robot.serviceID}`);
                                 console.error(error);
 
                                 // Clientside error logging
@@ -651,7 +656,7 @@ function controlRobot(call) {
                             controlRobotResponse.heldItem = "";
                             call.write(controlRobotResponse);
                         } catch (ex) {
-                            console.log("An error occurred while controlling a robot: ");
+                            log("An error occurred while controlling a robot: ");
                             console.error(ex);
                         }
                     });
@@ -665,7 +670,7 @@ function controlRobot(call) {
                     // do nothing if invalid command was sent
             }
         } catch (ex) {
-            console.log("An error occurred while controlling a robot: ");
+            log("An error occurred while controlling a robot: ");
             console.error(ex);
         }
     });
@@ -675,7 +680,7 @@ function controlRobot(call) {
     });
 
     call.on("error", function(e) {
-        console.log("An error occurred: ");
+        log("An error occurred: ");
         console.error(e);
     })
 }
@@ -684,16 +689,16 @@ function controlRobot(call) {
 function authenticate(call, callback) {
     const apiKey = call.request.apiKey;
 
-    console.log(`Authenticating ${apiKey}...`);
+    log(`Authenticating ${apiKey}...`);
 
     if (apiKey == API_KEY) {
-        console.log("Success!");
+        log("Success!");
         callback(null, {
             apiKey: apiKey,
             result: true
         });
     } else {
-        console.log("Failed!");
+        log("Failed!");
         callback(null, {
             apiKey: apiKey,
             result: false
@@ -706,12 +711,12 @@ discoveryService.registerService({
     serviceAddress: address()
 }, (error, response) => {
     if (error) {
-        console.log("An error occurred trying to register with discovery service: ");
+        log("An error occurred trying to register with discovery service: ");
         console.error(error);
         return;
     } else {
         serviceID = response.serviceID;
-        console.log(`Service registered with ID ${serviceID}`);
+        log(`Service registered with ID ${serviceID}`);
 
         // Create service after registering with discovery service
         server = new grpc.Server();
@@ -737,7 +742,7 @@ discoveryService.registerService({
         });
 
         server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
-            console.log("Warehouse Service running on " + address());
+            log("Warehouse Service running on " + address());
             //server.start(); // No longer necessary to call this function, according to node
 
             // At this stage we should go over all robots and add them to the list
@@ -760,7 +765,7 @@ discoveryService.registerService({
             listServicesCall.on("end", () => { });
 
             listServicesCall.on("error", function (e) {
-                console.log("Error identifying robot services:");
+                log("Error identifying robot services:");
                 console.error(e);
             });
         })

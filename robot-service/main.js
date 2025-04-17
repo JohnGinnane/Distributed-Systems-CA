@@ -18,12 +18,16 @@ let heldItem          = "";
 
 function address() { return `${ADDRESS}:${PORT}`; }
 
-const robotService     = new robotProto.RobotService(address(), grpc.credentials.createInsecure());
 const discoveryService = new discoveryProto.DiscoveryService(DISCOVERY_ADDRESS, grpc.credentials.createInsecure());
 let warehouseAddress   = ""; // Filled in later with a call to discovery service
 let warehouseService   = null;
 
 // FUNCTIONS //
+function log(str) {
+    var today  = new Date();
+    console.log("[" + today.toLocaleTimeString("en-IE") + "]", str);
+}
+
 function updateStatus() {
     try {
         warehouseService.SetRobotStatus({
@@ -34,7 +38,7 @@ function updateStatus() {
             heldItem:  heldItem
         }, ()=>{});
     } catch (ex) {
-        console.log("An error occurred updating robot status: ");
+        log("An error occurred updating robot status: ");
         console.error(ex);
     }
 }
@@ -47,7 +51,7 @@ function loadItem(call, callback) {
 
         callback(null, null);
     } catch (ex) {
-        console.log(`An error occurred trying to load '${itemName}' at ${location}`);
+        log(`An error occurred trying to load '${itemName}' at ${location}`);
         console.error(ex);
     }
 }
@@ -62,7 +66,7 @@ function unloadItem(call, callback) {
             itemName: itemName
         });
     } catch (ex) {
-        console.log(`An error occurred trying to unload item '${itemName}':`);
+        log(`An error occurred trying to unload item '${itemName}':`);
         console.error(ex);
     }
 }
@@ -70,7 +74,7 @@ function unloadItem(call, callback) {
 function goToLocation(call, callback) {
     // Goes to location
     const locationNameOrID = call.request.locationNameOrID;
-    console.log(`Going to ${locationNameOrID}`);
+    log(`Going to ${locationNameOrID}`);
 
     if (this.location == locationNameOrID) {
         // Immediately report back that we're at location
@@ -83,7 +87,7 @@ function goToLocation(call, callback) {
     // to simulate moving the robot
     setTimeout(() => {
         location = locationNameOrID;
-        console.log(`Arrived at ${location}`);
+        log(`Arrived at ${location}`);
         callback(null, {locationNameOrID: location});
         updateStatus();
     }, 1000);
@@ -96,7 +100,7 @@ discoveryService.FindService({
     serviceNameOrID: "warehouse"
 }, (error, response) => {
     if (error) {
-        console.log("An error occurred trying to find the warehouse service: ");
+        log("An error occurred trying to find the warehouse service: ");
         console.error(error);
         return;
     }
@@ -107,18 +111,17 @@ discoveryService.FindService({
     }
 
     warehouseAddress = response.serviceAddress;
-    console.log("Found warehouse service @", warehouseAddress);
+    log(`Found warehouse service @ ${warehouseAddress}`);
 
     // Now that we have the warehouse let's set up the rest of the robot
     warehouseService = new warehouseProto.WarehouseService(warehouseAddress, grpc.credentials.createInsecure());
-    console.log("hello!");
 
     // Find a free port for this service
     discoveryService.GetFreePort({
         targetPort: PORT
     }, (error, response) => {
         if (error) {
-            console.log("An error occurred trying to get a free port from discovery service: ");
+            log("An error occurred trying to get a free port from discovery service: ");
             console.error(error);
             return;
         }
@@ -131,13 +134,13 @@ discoveryService.FindService({
             serviceAddress: address()
         }, (error, response) => {
             if (error) {
-                console.log("An error occurred trying to register with discovery service: ");
+                log("An error occurred trying to register with discovery service: ");
                 console.error(error);
                 return;
             }
             
             serviceID = response.serviceID;
-            console.log(`Service registered with ID ${serviceID}`);
+            log(`Service registered with ID ${serviceID}`);
             
             // Create service after registering with discovery service
             server = new grpc.Server();
@@ -147,9 +150,9 @@ discoveryService.FindService({
                 UnloadItem:   unloadItem,
                 GoToLocation: goToLocation
             });
-
+            
             server.bindAsync(address(), grpc.ServerCredentials.createInsecure(), () => {
-                console.log("Robot Service running on " + address());
+                log(`Robot Service running on ${address()}`);
                 //server.start(); // No longer necessary to call this function, according to node
                 
                 // Robot should tell the warehouse its online
