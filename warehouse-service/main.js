@@ -16,8 +16,6 @@ let locations         = [];
 const MAX_SHELF_SIZE  = 20;
 let robots            = [];
 const API_KEY         = generateNewID(16);
-var public_key        = "";
-var private_key       = "";
 
 function log(str) {
     var today  = new Date();
